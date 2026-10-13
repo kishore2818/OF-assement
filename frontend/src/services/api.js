@@ -62,3 +62,9 @@ export async function resetDatabase() {
 export function getExportUrl() {
   return `${API_BASE}/transactions/export`;
 }
+
+export async function fetchSettlements() {
+  const res = await fetch(`${API_BASE}/settlements`);
+  if (!res.ok) throw new Error('Failed to fetch settlements');
+  return res.json();
+}

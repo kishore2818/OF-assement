@@ -48,7 +48,7 @@ export function Navbar({ onOpenReconcile, evaluationDate, setEvaluationDate, onD
           </div>
           <div>
             <span className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
-              FinOps <span className="text-emerald-400 font-normal">Reconcile</span>
+              OpenFabric <span className="text-emerald-400 font-normal">Reconcile</span>
             </span>
             <span className="block text-[10px] tracking-wider uppercase text-slate-400 -mt-1 font-mono">
               Transaction Engine v1.0

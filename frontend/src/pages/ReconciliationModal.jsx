@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Copy,
-  Check,
   RefreshCw,
   Sparkles,
   ArrowRight
@@ -37,7 +36,7 @@ SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD`;
 export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [csvText, setCsvText] = useState('');
-  const [inputMode, setInputMode] = useState('preset'); // 'preset', 'file', 'paste'
+  const [inputMode, setInputMode] = useState('preset');
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
@@ -72,7 +71,6 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
         }
         payload = csvText;
       } else {
-        // Preset default sample
         payload = DEFAULT_CSV_SAMPLE;
       }
 
@@ -87,22 +85,22 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-3xl glass-panel rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl overflow-hidden my-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-2 rounded-lg bg-[#EFF6FF] text-[#2563EB] border border-[#DBEAFE]">
               <UploadCloud className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">Ingest & Reconcile Settlement CSV</h3>
-              <p className="text-xs text-slate-400">Match processor tranches and update ledger balances</p>
+              <h3 className="text-base font-bold text-[#111827]">Ingest & Reconcile Settlement CSV</h3>
+              <p className="text-xs text-[#64748B]">Match processor tranches and update ledger balances</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#111827] hover:bg-[#E2E8F0] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -111,11 +109,11 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
         {/* Body */}
         <div className="p-6 space-y-6">
           {/* Mode Switcher */}
-          <div className="flex p-1 bg-slate-900 rounded-xl border border-slate-800 text-xs font-semibold">
+          <div className="flex p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8F0] text-xs font-semibold">
             <button
               onClick={() => { setInputMode('preset'); setResult(null); }}
               className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                inputMode === 'preset' ? 'bg-slate-800 text-emerald-400 shadow' : 'text-slate-400 hover:text-slate-200'
+                inputMode === 'preset' ? 'bg-white text-[#2563EB] shadow-xs' : 'text-[#64748B] hover:text-[#111827]'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -124,30 +122,30 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
             <button
               onClick={() => { setInputMode('file'); setResult(null); }}
               className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                inputMode === 'file' ? 'bg-slate-800 text-emerald-400 shadow' : 'text-slate-400 hover:text-slate-200'
+                inputMode === 'file' ? 'bg-white text-[#2563EB] shadow-xs' : 'text-[#64748B] hover:text-[#111827]'
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              Upload Custom File
+              Upload File
             </button>
             <button
               onClick={() => { setInputMode('paste'); setResult(null); }}
               className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                inputMode === 'paste' ? 'bg-slate-800 text-emerald-400 shadow' : 'text-slate-400 hover:text-slate-200'
+                inputMode === 'paste' ? 'bg-white text-[#2563EB] shadow-xs' : 'text-[#64748B] hover:text-[#111827]'
               }`}
             >
               <Copy className="w-3.5 h-3.5" />
-              Paste Raw CSV
+              Paste CSV
             </button>
           </div>
 
           {/* Preset Info */}
           {inputMode === 'preset' && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <div className="rounded-xl border border-[#DCFCE7] bg-[#F0FDF4] p-4 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-[#16A34A] shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-semibold text-emerald-300">Authoritative Exercise Dataset</h4>
-                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                <h4 className="text-sm font-semibold text-[#15803D]">Authoritative Exercise Dataset</h4>
+                <p className="text-xs text-[#166534] mt-1 leading-relaxed">
                   Includes 19 test settlement records from the assignment, covering primary lifecycle matches, fallback composite matches (Corner Deli, Shell Gas), partial tranches, complex refund credits, over-settlement (Walmart), and unmatched records (Disney Plus, failed Amazon, Uber Taxi).
                 </p>
               </div>
@@ -156,7 +154,7 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
 
           {/* File Upload Zone */}
           {inputMode === 'file' && (
-            <div className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-xl p-8 text-center transition-colors">
+            <div className="border-2 border-dashed border-[#CBD5E1] hover:border-[#2563EB] rounded-xl p-8 text-center transition-colors bg-[#F8FAFC]">
               <input
                 type="file"
                 accept=".csv"
@@ -165,11 +163,11 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
                 className="hidden"
               />
               <label htmlFor="csvFileInput" className="cursor-pointer block">
-                <UploadCloud className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                <span className="text-sm font-semibold text-slate-200 block">
+                <UploadCloud className="w-10 h-10 text-[#64748B] mx-auto mb-3" />
+                <span className="text-sm font-semibold text-[#111827] block">
                   {selectedFile ? selectedFile.name : 'Click to select or drag and drop a settlement CSV'}
                 </span>
-                <span className="text-xs text-slate-500 mt-1 block">Supported format: UTF-8 CSV with standard header fields</span>
+                <span className="text-xs text-[#64748B] mt-1 block">Supported format: UTF-8 CSV with standard header fields</span>
               </label>
             </div>
           )}
@@ -177,7 +175,7 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
           {/* Raw Text Input */}
           {inputMode === 'paste' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">
                 Paste CSV Data
               </label>
               <textarea
@@ -185,63 +183,63 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
                 value={csvText}
                 onChange={(e) => setCsvText(e.target.value)}
                 placeholder="settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency&#10;SET001,LC001,ACC123,..."
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-emerald-500/50"
+                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 text-xs font-mono text-[#111827] focus:outline-none focus:border-[#2563EB]"
               />
             </div>
           )}
 
           {/* Error notification */}
           {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+            <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FEE2E2] text-[#DC2626] text-xs flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-[#DC2626]" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {/* Execution Results View */}
           {result && (
-            <div className="space-y-4 pt-2 border-t border-slate-800">
+            <div className="space-y-4 pt-2 border-t border-[#E2E8F0]">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
                   Reconciliation Execution Report
                 </h4>
-                <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                <span className="text-[11px] font-mono text-[#16A34A] bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#DCFCE7]">
                   Status: Completed
                 </span>
               </div>
 
               {/* KPI Cards Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 uppercase font-semibold">Records Read</span>
-                  <p className="text-xl font-bold text-white mt-1">{result.summary.recordsRead}</p>
+                <div className="p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
+                  <span className="text-[10px] text-[#64748B] uppercase font-semibold">Records Read</span>
+                  <p className="text-xl font-bold text-[#111827] mt-1">{result.summary.recordsRead}</p>
                 </div>
-                <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-emerald-400 uppercase font-semibold">Inserted</span>
-                  <p className="text-xl font-bold text-emerald-400 mt-1">{result.summary.newSettlementsInserted}</p>
+                <div className="p-3 bg-[#F0FDF4] rounded-xl border border-[#DCFCE7]">
+                  <span className="text-[10px] text-[#16A34A] uppercase font-semibold">Inserted</span>
+                  <p className="text-xl font-bold text-[#16A34A] mt-1">{result.summary.newSettlementsInserted}</p>
                 </div>
-                <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-amber-400 uppercase font-semibold">Duplicates</span>
-                  <p className="text-xl font-bold text-amber-400 mt-1">{result.summary.duplicatesSkipped}</p>
+                <div className="p-3 bg-[#FFFBEB] rounded-xl border border-[#FEF3C7]">
+                  <span className="text-[10px] text-[#D97706] uppercase font-semibold">Duplicates</span>
+                  <p className="text-xl font-bold text-[#D97706] mt-1">{result.summary.duplicatesSkipped}</p>
                 </div>
-                <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-rose-400 uppercase font-semibold">Unmatched</span>
-                  <p className="text-xl font-bold text-rose-400 mt-1">{result.summary.unmatchedRecords}</p>
+                <div className="p-3 bg-[#FEF2F2] rounded-xl border border-[#FEE2E2]">
+                  <span className="text-[10px] text-[#DC2626] uppercase font-semibold">Unmatched</span>
+                  <p className="text-xl font-bold text-[#DC2626] mt-1">{result.summary.unmatchedRecords}</p>
                 </div>
               </div>
 
               {/* Unmatched / Quarantined Records Details */}
               {result.unmatched && result.unmatched.length > 0 && (
-                <div className="bg-slate-900/60 rounded-xl border border-slate-800 p-3 space-y-2">
-                  <span className="text-xs font-semibold text-rose-300 block">
+                <div className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-3 space-y-2">
+                  <span className="text-xs font-semibold text-[#DC2626] block">
                     Unmatched / Quarantined Entries ({result.unmatched.length})
                   </span>
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 font-mono">
                     {result.unmatched.map((item, idx) => (
-                      <div key={idx} className="p-2 bg-slate-950 rounded-lg text-xs font-mono border border-slate-800/80 flex items-start justify-between gap-2">
-                        <span className="text-amber-400 font-semibold">{item.settlement_id}</span>
-                        <span className="text-slate-400 text-right flex-1">{item.reason}</span>
+                      <div key={idx} className="p-2 bg-white rounded-lg text-xs border border-[#E2E8F0] flex items-start justify-between gap-2">
+                        <span className="text-[#D97706] font-semibold">{item.settlement_id}</span>
+                        <span className="text-[#64748B] text-right flex-1">{item.reason}</span>
                       </div>
                     ))}
                   </div>
@@ -252,10 +250,10 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-900/50">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-[#E2E8F0] bg-[#F8FAFC]">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-[#64748B] hover:text-[#111827] transition-colors"
           >
             {result ? 'Done' : 'Cancel'}
           </button>
@@ -263,11 +261,11 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
           <button
             onClick={handleRunReconciliation}
             disabled={processing}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-emerald-950/40 disabled:opacity-50 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-md shadow-[#2563EB]/20 disabled:opacity-50 transition-all"
           >
             {processing ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                <RefreshCw className="w-4 h-4 animate-spin text-white" />
                 <span>Processing Batch...</span>
               </>
             ) : (

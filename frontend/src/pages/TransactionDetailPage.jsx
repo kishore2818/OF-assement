@@ -2,18 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
-  Calendar,
-  CreditCard,
-  Building,
-  Hash,
   AlertCircle,
   AlertTriangle,
-  CheckCircle2,
-  Receipt,
-  Clock,
-  RefreshCw,
-  HelpCircle,
-  DollarSign
+  RefreshCw
 } from 'lucide-react';
 import { fetchTransactionById } from '../services/api';
 import { StatusBadge } from '../components/StatusBadge';
@@ -44,25 +35,25 @@ export function TransactionDetailPage({ evaluationDate }) {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <RefreshCw className="w-8 h-8 text-emerald-400 animate-spin" />
-        <p className="text-sm text-slate-400 font-mono">Fetching transaction audit details...</p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3">
+        <RefreshCw className="w-8 h-8 text-[#2563EB] animate-spin" />
+        <p className="text-sm text-[#64748B] font-mono">Fetching transaction audit details...</p>
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="p-8 max-w-2xl mx-auto glass-panel rounded-2xl border border-rose-500/30 text-center my-12">
-        <AlertCircle className="w-10 h-10 text-rose-400 mx-auto mb-3" />
-        <h3 className="text-lg font-bold text-white">Transaction Not Found</h3>
-        <p className="text-sm text-slate-400 mt-2">{error || `Could not find transaction with ID "${id}"`}</p>
+      <div className="p-8 max-w-2xl mx-auto bg-white rounded-2xl border border-[#FEE2E2] text-center my-12 shadow-sm">
+        <AlertCircle className="w-10 h-10 text-[#DC2626] mx-auto mb-3" />
+        <h3 className="text-lg font-bold text-[#111827]">Transaction Not Found</h3>
+        <p className="text-sm text-[#64748B] mt-2">{error || `Could not find transaction with ID "${id}"`}</p>
         <Link
           to="/transactions"
-          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition-colors"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-xs font-semibold text-white transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Ledger
+          Back to Transactions
         </Link>
       </div>
     );
@@ -70,24 +61,24 @@ export function TransactionDetailPage({ evaluationDate }) {
 
   return (
     <div className="space-y-8 pb-16">
-      {/* Navigation & Title Header */}
+      {/* Navigation Header */}
       <div>
         <Link
           to="/transactions"
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors mb-4"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-[#64748B] hover:text-[#2563EB] transition-colors mb-4"
         >
           <ArrowLeft className="w-4 h-4" />
-          Back to Transactions Ledger
+          Back to Transactions
         </Link>
 
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel rounded-2xl p-6 border border-slate-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-mono font-bold text-white">{data.transaction_id}</h1>
+              <h1 className="text-2xl font-mono font-bold text-[#111827]">{data.transaction_id}</h1>
               <StatusBadge status={data.settlement_status} />
               <IssueBadge severity={data.primary_issue_severity} count={data.issues?.length} />
             </div>
-            <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 font-mono">
+            <p className="text-xs text-[#64748B] mt-1 flex items-center gap-2 font-mono">
               <span>Account: <strong>{data.account_id}</strong></span>
               <span>•</span>
               <span>Merchant: <strong>{data.merchant_name}</strong></span>
@@ -96,29 +87,29 @@ export function TransactionDetailPage({ evaluationDate }) {
             </p>
           </div>
 
-          <div className="flex items-center gap-4 bg-slate-900/80 px-5 py-3 rounded-xl border border-slate-800 font-mono">
+          <div className="flex items-center gap-4 bg-[#F8FAFC] px-5 py-3 rounded-xl border border-[#E2E8F0] font-mono">
             <div>
-              <span className="text-[10px] text-slate-400 uppercase font-semibold">Transaction Amount</span>
-              <p className="text-xl font-bold text-white">${data.transaction_amount.toFixed(2)}</p>
+              <span className="text-[10px] text-[#64748B] uppercase font-semibold">Transaction Amount</span>
+              <p className="text-xl font-bold text-[#111827]">${data.transaction_amount.toFixed(2)}</p>
             </div>
-            <div className="w-px h-8 bg-slate-800"></div>
+            <div className="w-px h-8 bg-[#E2E8F0]"></div>
             <div>
-              <span className="text-[10px] text-emerald-400 uppercase font-semibold">Net Settled</span>
-              <p className="text-xl font-bold text-emerald-400">${data.total_settled_amount.toFixed(2)}</p>
+              <span className="text-[10px] text-[#16A34A] uppercase font-semibold">Net Settled</span>
+              <p className="text-xl font-bold text-[#16A34A]">${data.total_settled_amount.toFixed(2)}</p>
             </div>
-            <div className="w-px h-8 bg-slate-800"></div>
+            <div className="w-px h-8 bg-[#E2E8F0]"></div>
             <div>
-              <span className="text-[10px] text-amber-400 uppercase font-semibold">Outstanding</span>
-              <p className="text-xl font-bold text-amber-400">${data.outstanding_amount.toFixed(2)}</p>
+              <span className="text-[10px] text-[#D97706] uppercase font-semibold">Outstanding</span>
+              <p className="text-xl font-bold text-[#D97706]">${data.outstanding_amount.toFixed(2)}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Issues & Triage Recommendations (if any) */}
+      {/* Issues & Triage Recommendations */}
       {data.issues && data.issues.length > 0 && (
         <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
             Detected Exceptions & Action Items
           </h3>
           <div className="space-y-3">
@@ -127,14 +118,14 @@ export function TransactionDetailPage({ evaluationDate }) {
                 key={idx}
                 className={`p-5 rounded-2xl border flex items-start gap-3.5 ${
                   issue.severity === 'CRITICAL'
-                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-200'
-                    : 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+                    ? 'bg-[#FEF2F2] border-[#FEE2E2] text-[#991B1B]'
+                    : 'bg-[#FFFBEB] border-[#FEF3C7] text-[#92400E]'
                 }`}
               >
                 {issue.severity === 'CRITICAL' ? (
-                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-[#DC2626] shrink-0 mt-0.5" />
                 ) : (
-                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-[#D97706] shrink-0 mt-0.5" />
                 )}
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -153,75 +144,74 @@ export function TransactionDetailPage({ evaluationDate }) {
         </div>
       )}
 
-      {/* Detailed Grid: Transaction Metadata + Chronological Timeline */}
+      {/* Metadata & Ledger Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Metadata Cards */}
+        {/* Left: Metadata */}
         <div className="lg:col-span-1 space-y-4">
-          <div className="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#64748B]">
               Transaction Metadata
             </h3>
             <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
-                <span className="text-slate-400">Transaction ID</span>
-                <span className="font-mono font-semibold text-white">{data.transaction_id}</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Transaction ID</span>
+                <span className="font-mono font-semibold text-[#111827]">{data.transaction_id}</span>
               </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
-                <span className="text-slate-400">Lifecycle ID</span>
-                <span className="font-mono text-slate-300">{data.lifecycle_id || 'None (Fallback Matched)'}</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Lifecycle ID</span>
+                <span className="font-mono text-[#334155]">{data.lifecycle_id || 'None (Fallback Matched)'}</span>
               </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
-                <span className="text-slate-400">Account ID</span>
-                <span className="font-mono text-slate-300">{data.account_id}</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Account ID</span>
+                <span className="font-mono text-[#334155]">{data.account_id}</span>
               </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
-                <span className="text-slate-400">Merchant</span>
-                <span className="font-medium text-slate-200">{data.merchant_name}</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Merchant</span>
+                <span className="font-medium text-[#111827]">{data.merchant_name}</span>
               </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
-                <span className="text-slate-400">Transaction Date</span>
-                <span className="font-mono text-slate-300">{data.transaction_date}</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Transaction Date</span>
+                <span className="font-mono text-[#334155]">{data.transaction_date}</span>
               </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
-                <span className="text-slate-400">Currency</span>
-                <span className="font-mono font-bold text-white">{data.currency}</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Currency</span>
+                <span className="font-mono font-bold text-[#111827]">{data.currency}</span>
               </div>
-              <div className="flex items-center justify-between py-1.5 border-b border-slate-800/80">
-                <span className="text-slate-400">Original Status</span>
-                <span className="font-mono font-semibold text-sky-400">{data.status}</span>
+              <div className="flex items-center justify-between py-1.5 border-b border-[#F1F5F9]">
+                <span className="text-[#64748B]">Original Status</span>
+                <span className="font-mono font-semibold text-[#2563EB]">{data.status}</span>
               </div>
               <div className="flex items-center justify-between py-1.5">
-                <span className="text-slate-400">Last Settled Date</span>
-                <span className="font-mono text-slate-300">{data.last_settlement_date || 'N/A'}</span>
+                <span className="text-[#64748B]">Last Settled Date</span>
+                <span className="font-mono text-[#334155]">{data.last_settlement_date || 'N/A'}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Settlement History Table & Timeline */}
+        {/* Right: Tranches & Timeline */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Settlement Ledger Table */}
-          <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden">
-            <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+            <div className="p-5 border-b border-[#E2E8F0] flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white">Settlement Tranches Ledger</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Matched settlement events in <code className="text-emerald-400">settlement_history</code>
+                <h3 className="text-sm font-bold text-[#111827]">Settlement Tranches Ledger</h3>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Matched settlement events in <code className="text-[#2563EB]">settlement_history</code>
                 </p>
               </div>
-              <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300">
+              <span className="text-xs font-mono px-2.5 py-1 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-[#475569]">
                 {data.settlements?.length || 0} Tranche(s)
               </span>
             </div>
 
             {(!data.settlements || data.settlements.length === 0) ? (
-              <div className="py-12 text-center text-slate-500 text-xs">
+              <div className="py-12 text-center text-[#94A3B8] text-xs">
                 No settlement records have been associated with this transaction yet.
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-900/80 text-slate-400 font-semibold border-b border-slate-800 uppercase tracking-wider font-mono">
+                  <thead className="bg-[#F8FAFC] text-[#64748B] font-semibold border-b border-[#E2E8F0] uppercase tracking-wider font-mono">
                     <tr>
                       <th className="py-3 px-5">Settlement ID</th>
                       <th className="py-3 px-4">Date</th>
@@ -231,17 +221,17 @@ export function TransactionDetailPage({ evaluationDate }) {
                       <th className="py-3 px-5 text-right">Recorded At</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800/60 font-mono">
+                  <tbody className="divide-y divide-[#E2E8F0] font-mono">
                     {data.settlements.map((s) => (
-                      <tr key={s.settlement_id} className="hover:bg-slate-900/40">
-                        <td className="py-3 px-5 font-semibold text-white">{s.settlement_id}</td>
-                        <td className="py-3 px-4 text-slate-300">{s.settlement_date}</td>
+                      <tr key={s.settlement_id} className="hover:bg-[#F8FAFC]">
+                        <td className="py-3 px-5 font-semibold text-[#111827]">{s.settlement_id}</td>
+                        <td className="py-3 px-4 text-[#475569]">{s.settlement_date}</td>
                         <td className="py-3 px-4">
                           <span
                             className={`px-2 py-0.5 rounded text-[11px] font-bold ${
                               s.settlement_type === 'DEBIT'
-                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-purple-500/15 text-purple-400 border border-purple-500/30'
+                                ? 'bg-[#F0FDF4] text-[#16A34A] border border-[#DCFCE7]'
+                                : 'bg-[#FAF5FF] text-[#9333EA] border border-[#F3E8FF]'
                             }`}
                           >
                             {s.settlement_type}
@@ -249,13 +239,13 @@ export function TransactionDetailPage({ evaluationDate }) {
                         </td>
                         <td
                           className={`py-3 px-4 text-right font-bold ${
-                            s.settlement_type === 'DEBIT' ? 'text-emerald-400' : 'text-purple-400'
+                            s.settlement_type === 'DEBIT' ? 'text-[#16A34A]' : 'text-[#9333EA]'
                           }`}
                         >
                           {s.settlement_type === 'DEBIT' ? '+' : '-'}${s.settlement_amount.toFixed(2)}
                         </td>
-                        <td className="py-3 px-4 text-slate-400">{s.currency}</td>
-                        <td className="py-3 px-5 text-right text-slate-500 text-[11px] font-sans">
+                        <td className="py-3 px-4 text-[#64748B]">{s.currency}</td>
+                        <td className="py-3 px-5 text-right text-[#94A3B8] text-[11px] font-sans">
                           {s.processed_at ? new Date(s.processed_at).toLocaleString() : 'N/A'}
                         </td>
                       </tr>
@@ -266,18 +256,9 @@ export function TransactionDetailPage({ evaluationDate }) {
             )}
           </div>
 
-          {/* Interactive Settlement Timeline Visualization (Bonus Requirement) */}
-          <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-white">Reconciliation Lifecycle Timeline</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Sequential audit events from origination to reconciliation</p>
-              </div>
-              <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                Bonus Feature
-              </span>
-            </div>
-
+          {/* Timeline */}
+          <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm space-y-4">
+            <h3 className="text-sm font-bold text-[#111827]">Reconciliation Lifecycle Timeline</h3>
             <div className="pt-2">
               <Timeline events={data.timeline} />
             </div>
