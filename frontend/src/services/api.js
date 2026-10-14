@@ -1,4 +1,5 @@
-const API_BASE = 'http://localhost:4000';
+const rawApiBase = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const API_BASE = rawApiBase.replace(/\/+$/, '');
 
 export async function fetchSummary(evaluationDate, runId) {
   const url = new URL(`${API_BASE}/dashboard/summary`);
@@ -177,5 +178,57 @@ export async function fetchSettlements(runId) {
   if (runId && runId !== 'ALL') url.searchParams.set('runId', runId);
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error('Failed to fetch settlements');
+  return res.json();
+}
+
+export const getTransactions = fetchTransactions;
+
+export async function updateTransaction(id, data) {
+  const res = await fetch(`${API_BASE}/transactions/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to update transaction ${id}`);
+  }
+  return res.json();
+}
+
+export async function createTransaction(data) {
+  const res = await fetch(`${API_BASE}/transactions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to create transaction');
+  }
+  return res.json();
+}
+
+export async function deleteTransaction(id) {
+  const res = await fetch(`${API_BASE}/transactions/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to delete transaction ${id}`);
+  }
+  return res.json();
+}
+
+export async function bulkCreateTransactions(transactions) {
+  const res = await fetch(`${API_BASE}/transactions/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transactions }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Failed to bulk import transactions');
+  }
   return res.json();
 }

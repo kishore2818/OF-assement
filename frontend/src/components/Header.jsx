@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Calendar, UploadCloud, RotateCcw, Check, Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Clock, UploadCloud, RotateCcw, Check, Menu, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { resetDatabase } from '../services/api';
 import { OpenfabricLogo } from './OpenfabricLogo';
@@ -15,6 +15,27 @@ export function Header({
 }) {
   const [resetting, setResetting] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentDateStr = now.toLocaleDateString('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric'
+  });
+
+  const currentTimeStr = now.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
 
   const handleReset = async () => {
     if (!window.confirm('Reset database back to initial seed state?')) return;
@@ -93,30 +114,17 @@ export function Header({
 
           {/* Right: Date Filter, DB Reset, Reconcile CTA */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Evaluation Date Filter */}
-            <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-xl bg-[#EFF2F7] border border-[#D1D8E6] text-xs text-[#3A468F] hover:border-[#9EA5C7] transition-colors">
-              <Calendar className="w-3.5 h-3.5 text-[#27A8E0] shrink-0" />
-              <span className="hidden md:inline text-[#5B6487] font-medium text-[11px] sm:text-xs">
-                {evaluationDate ? 'Date:' : 'Latest:'}
-              </span>
-              <input
-                type="date"
-                value={evaluationDate || ''}
-                onChange={(e) => setEvaluationDate(e.target.value)}
-                aria-label="Evaluation date"
-                title={evaluationDate ? `Filtering by ${evaluationDate}` : 'Displaying latest database updates'}
-                className="bg-transparent text-[#0F1B4C] font-mono text-[11px] sm:text-xs focus:outline-none cursor-pointer w-[92px] sm:w-auto"
-              />
-              {evaluationDate && (
-                <button
-                  onClick={() => setEvaluationDate('')}
-                  title="Clear filter to view latest updates"
-                  aria-label="Reset to latest date"
-                  className="p-0.5 rounded text-[#9EA5C7] hover:text-[#0F1B4C] hover:bg-[#D1D8E6] transition-colors shrink-0"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+            {/* Live Clock / System Time */}
+            <div 
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#EFF2F7] border border-[#D1D8E6] text-[#0F1B4C] shadow-2xs"
+              title="Live System Time"
+            >
+              <Clock className="w-3.5 h-3.5 text-[#1EC8A5] shrink-0 animate-pulse" />
+              <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
+                <span className="font-semibold text-[#0F1B4C] hidden xs:inline">{currentDateStr}</span>
+                <span className="text-[#9EA5C7] hidden xs:inline">•</span>
+                <span className="font-bold text-[#1EC8A5] tracking-wide">{currentTimeStr}</span>
+              </div>
             </div>
 
             {/* Reset Database Button */}

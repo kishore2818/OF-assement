@@ -25,7 +25,7 @@ export default function App() {
   };
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-[#F7F9FC] text-[#0F1B4C] flex font-sans pb-16 lg:pb-0">
         {/* Deep Obsidian Sidebar (Docked on desktop, drawer on mobile) */}
         <Sidebar
@@ -106,6 +106,7 @@ export default function App() {
                   <SettingsPage
                     evaluationDate={evaluationDate}
                     setEvaluationDate={setEvaluationDate}
+                    onDataChanged={triggerRefresh}
                   />
                 }
               />

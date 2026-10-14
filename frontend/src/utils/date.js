@@ -16,15 +16,27 @@ export function formatDateTime(rawDate) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return rawDate;
 
-  return d.toLocaleString('en-US', {
+  const datePart = d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+  });
+
+  const timeParts = new Intl.DateTimeFormat('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: true
-  });
+    hour12: true,
+  }).formatToParts(d);
+
+  // Build "10:30:30\u00a0AM" — non-breaking space keeps time+AM/PM on one line
+  const hour   = timeParts.find(p => p.type === 'hour')?.value   ?? '';
+  const min    = timeParts.find(p => p.type === 'minute')?.value  ?? '';
+  const sec    = timeParts.find(p => p.type === 'second')?.value  ?? '';
+  const ampm   = timeParts.find(p => p.type === 'dayPeriod')?.value ?? '';
+  const timePart = `${hour}:${min}:${sec}\u00a0${ampm}`;
+
+  return `${datePart}, ${timePart}`;
 }
 
 /**

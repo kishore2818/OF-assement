@@ -70,13 +70,19 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
   const [activeTab, setActiveTab] = useState('transactions'); // 'transactions' | 'settlements'
 
   // ────────────────────────────────────────────────────────────────────────────
-  // 2. TIMEFRAME & DATE RANGE FILTER STATE
+  // 2. TIMEFRAME & LIVE CLOCK STATE
   // ────────────────────────────────────────────────────────────────────────────
+  const [liveNow, setLiveNow] = useState(new Date());
+
+  useEffect(() => {
+    const clockTimer = setInterval(() => {
+      setLiveNow(new Date());
+    }, 1000);
+    return () => clearInterval(clockTimer);
+  }, []);
+
   const [timeframe, setTimeframe] = useState('monthly'); // 'daily' | 'monthly' | 'yearly' | 'custom'
   const [trendGranularity, setTrendGranularity] = useState('monthly'); // 'daily' | 'monthly' | 'yearly'
-  const [startDate, setStartDate] = useState('2026-10-01');
-  const [endDate, setEndDate] = useState('2026-10-13');
-  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // ────────────────────────────────────────────────────────────────────────────
   // 3. RUN INGESTION FILTER, DELETION & DOSSIER MODAL STATE
@@ -87,19 +93,21 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
   const [runLoading, setRunLoading] = useState(false);
   const [runItemFilter, setRunItemFilter] = useState('ALL');
   const [deletingRunId, setDeletingRunId] = useState(null);
+  const [runToDelete, setRunToDelete] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
   }, [evaluationDate, refreshKey, search, selectedRunId]);
 
-  async function loadDashboardData() {
+  async function loadDashboardData(overrideRunId) {
     try {
       setLoading(true);
       setError(null);
+      const effectiveRunId = overrideRunId !== undefined ? overrideRunId : selectedRunId;
       const [sumRes, txRes, setRes, runsRes] = await Promise.all([
-        fetchSummary(evaluationDate, selectedRunId),
-        fetchTransactions({ evaluationDate, search, runId: selectedRunId }),
-        fetchSettlements(selectedRunId).catch(() => ({ data: [] })),
+        fetchSummary(evaluationDate, effectiveRunId),
+        fetchTransactions({ evaluationDate, search, runId: effectiveRunId }),
+        fetchSettlements(effectiveRunId).catch(() => ({ data: [] })),
         fetchReconciliationRuns({ limit: 100 }).catch(() => ({ total: 0, runs: [] }))
       ]);
       setSummary(sumRes.data);
@@ -113,29 +121,38 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
     }
   }
 
-  async function handleDeleteRun(runId, fileName) {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete file "${fileName}" (${runId})?\n\nThis will remove all settlements ingested from this file and roll back affected transactions to their previous state.`
-      )
-    ) {
-      return;
+  function requestDeleteRun(runId, fileName, e) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
     }
+    setRunToDelete({ run_id: runId, file_name: fileName });
+  }
+
+  async function executeDeleteRun(runId, fileName) {
     try {
       setDeletingRunId(runId);
       await deleteReconciliationRun(runId);
-      if (selectedRunId === runId) setSelectedRunId(null);
+      const shouldClearActive = selectedRunId === runId;
+      if (shouldClearActive) {
+        setSelectedRunId(null);
+      }
       if (selectedRun && selectedRun.run_id === runId) {
         setSelectedRun(null);
         setRunDetails(null);
       }
-      await loadDashboardData();
+      setRunToDelete(null);
+      await loadDashboardData(shouldClearActive ? null : selectedRunId);
     } catch (err) {
       alert(`Failed to delete run: ${err.message}`);
     } finally {
       setDeletingRunId(null);
+      setRunToDelete(null);
     }
   }
+
+  // Alias for backward compatibility
+  const handleDeleteRun = requestDeleteRun;
 
   async function openRunDetails(run) {
     setSelectedRun(run);
@@ -345,94 +362,32 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
           1. TIMEFRAME & DATE RANGE FILTER BAR (Responsive Touch Pill Controls)
           ──────────────────────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white p-2.5 sm:px-4 sm:py-2.5 rounded-2xl border border-slate-200 shadow-xs">
-        {/* Left: Date Range Pill Button with Responsive Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowDatePicker(!showDatePicker)}
-            className="w-full sm:w-auto inline-flex items-center justify-between sm:justify-start gap-2 px-3 py-2 sm:py-1.5 rounded-xl border border-slate-200/90 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-medium transition-all shadow-2xs active:scale-[0.98]"
-          >
-            <div className="flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5 text-[#1EC8A5] shrink-0" />
-              <span className="font-mono text-[11px] sm:text-xs">
-                {startDate === '2026-10-01' && endDate === '2026-10-13'
-                  ? 'Oct 01, 2026 – Oct 13, 2026'
-                  : `${startDate} – ${endDate}`}
-              </span>
-            </div>
-            <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showDatePicker ? 'rotate-180' : ''}`} />
-          </button>
-
-          {/* Quick Date Range Picker Dropdown (Mobile-Optimized) */}
-          {showDatePicker && (
-            <div className="absolute left-0 sm:left-0 top-full mt-2 z-40 bg-white rounded-2xl border border-slate-200 shadow-xl p-4 w-full sm:w-72 space-y-3 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-800">Select Date Range</span>
-                <button
-                  onClick={() => setShowDatePicker(false)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded-lg active:bg-slate-100"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Preset Quick Buttons */}
-              <div className="grid grid-cols-2 gap-1.5 text-xs font-medium">
-                <button
-                  onClick={() => applyDateRange('7d')}
-                  className="px-2.5 py-2 rounded-lg bg-slate-50 hover:bg-brand-50 hover:text-brand-400 text-slate-700 text-left transition-colors active:scale-95"
-                >
-                  Last 7 Days
-                </button>
-                <button
-                  onClick={() => applyDateRange('30d')}
-                  className="px-2.5 py-2 rounded-lg bg-slate-50 hover:bg-brand-50 hover:text-brand-400 text-slate-700 text-left transition-colors active:scale-95"
-                >
-                  Last 30 Days
-                </button>
-                <button
-                  onClick={() => applyDateRange('month')}
-                  className="px-2.5 py-2 rounded-lg bg-slate-50 hover:bg-brand-50 hover:text-brand-400 text-slate-700 text-left transition-colors active:scale-95"
-                >
-                  Month to Date
-                </button>
-                <button
-                  onClick={() => applyDateRange('year')}
-                  className="px-2.5 py-2 rounded-lg bg-slate-50 hover:bg-brand-50 hover:text-brand-400 text-slate-700 text-left transition-colors active:scale-95"
-                >
-                  Year to Date
-                </button>
-              </div>
-
-              {/* Custom Date Inputs */}
-              <div className="space-y-2 pt-2 border-t border-slate-100 text-xs">
-                <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-400">Start Date</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] uppercase font-bold text-slate-400">End Date</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full mt-0.5 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowDatePicker(false)}
-                className="w-full py-2 bg-[#1EC8A5] hover:bg-[#19B494] text-white text-xs font-bold rounded-xl transition-colors shadow-sm active:scale-95"
-              >
-                Apply Range
-              </button>
-            </div>
-          )}
+        {/* Left: Live System Date & Time Clock Indicator */}
+        <div className="flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 text-xs font-medium shadow-2xs">
+          <Clock className="w-3.5 h-3.5 text-[#1EC8A5] shrink-0 animate-pulse" />
+          <div className="flex items-center gap-2 font-mono text-[11px] sm:text-xs">
+            <span className="font-semibold text-slate-900">
+              {liveNow.toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric'
+              })}
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="font-bold text-[#1EC8A5] tracking-wide">
+              {liveNow.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+              })}
+            </span>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              LIVE
+            </span>
+          </div>
         </div>
 
         {/* Right: Segmented Period Bar [ Daily | Monthly | Yearly | Custom ] */}
@@ -961,11 +916,6 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
               <h3 className="text-base font-bold text-slate-900">
                 CSV Ingestion Batches ({runs.length} Files Uploaded)
               </h3>
-              {runs.length > 3 && (
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#1EC8A5]/15 text-[#1EC8A5] border border-[#1EC8A5]/30">
-                  ↕ Scrollable View
-                </span>
-              )}
             </div>
             <p className="text-xs text-slate-500">
               Each uploaded batch file can be activated or removed for dashboard scoping, inspected, or deleted to roll back settlements.
@@ -986,8 +936,8 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
           </div>
         ) : (
           <>
-            {/* Mobile Responsive Cards (< md screens) with Vertical Scroll */}
-            <div className="md:hidden divide-y divide-slate-100 max-h-[420px] overflow-y-auto scroll-smooth">
+            {/* Mobile Responsive Cards (< md screens) */}
+            <div className="md:hidden divide-y divide-slate-100">
               {runs.map((run) => {
                 const isRunActive = selectedRunId === run.run_id;
                 return (
@@ -1086,20 +1036,20 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
               })}
             </div>
 
-            {/* Desktop Table (>= md screens) with Vertical and Horizontal Scroll */}
-            <div className="hidden md:block max-h-[380px] overflow-y-auto overflow-x-auto relative scroll-smooth border-t border-slate-100">
-              <table className="w-full text-left text-xs min-w-[760px]">
-                <thead className="bg-[#F8FAFC] text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider font-mono text-[10px] sticky top-0 z-20 shadow-xs backdrop-blur-sm">
+            {/* Desktop Table (>= md screens) Static Clean Layout */}
+            <div className="hidden md:block overflow-x-auto border-t border-slate-100">
+              <table className="w-full text-left text-xs min-w-[840px]">
+                <thead className="bg-[#F8FAFC] text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider font-mono text-[10px]">
                   <tr>
-                    <th className="py-2.5 px-3.5 bg-[#F8FAFC]">Batch ID</th>
-                    <th className="py-2.5 px-3 bg-[#F8FAFC]">File Name</th>
-                    <th className="py-2.5 px-3 bg-[#F8FAFC]">Upload Timestamp</th>
-                    <th className="py-2.5 px-3 bg-[#F8FAFC]">Status</th>
-                    <th className="py-2.5 px-2.5 text-right bg-[#F8FAFC]">Read</th>
-                    <th className="py-2.5 px-2.5 text-right text-emerald-600 bg-[#F8FAFC]">Settled</th>
-                    <th className="py-2.5 px-2.5 text-right text-slate-500 bg-[#F8FAFC]">Skipped</th>
-                    <th className="py-2.5 px-2.5 text-right text-rose-600 bg-[#F8FAFC]">Issues</th>
-                    <th className="py-2.5 px-4 text-right sticky right-0 bg-[#F8FAFC] z-30 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.06)]">
+                    <th className="py-3 px-4">Batch ID</th>
+                    <th className="py-3 px-3">File Name</th>
+                    <th className="py-3 px-3">Upload Timestamp</th>
+                    <th className="py-3 px-3">Status</th>
+                    <th className="py-3 px-3 text-right">Read</th>
+                    <th className="py-3 px-3 text-right text-emerald-600">Settled</th>
+                    <th className="py-3 px-3 text-right text-slate-500">Skipped</th>
+                    <th className="py-3 px-3 text-right text-rose-600">Issues</th>
+                    <th className="py-3 px-4 text-right">
                       Actions
                     </th>
                   </tr>
@@ -1708,6 +1658,62 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ────────────────────────────────────────────────────────────────────────────
+          9. BATCH DELETE CONFIRMATION MODAL (Replaces blocked window.confirm)
+          ──────────────────────────────────────────────────────────────────────────── */}
+      {runToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Delete Upload Batch</h3>
+                <p className="text-xs text-slate-500 font-mono truncate max-w-[280px]">
+                  {runToDelete.file_name}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Are you sure you want to delete file <strong className="font-semibold text-slate-800 font-mono">{runToDelete.file_name}</strong> (<span className="font-mono text-[#1EC8A5]">{runToDelete.run_id}</span>)?
+              <br /><br />
+              This will permanently remove all settlements ingested from this file and roll back affected transactions to their previous state.
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setRunToDelete(null)}
+                disabled={Boolean(deletingRunId)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => executeDeleteRun(runToDelete.run_id, runToDelete.file_name)}
+                disabled={Boolean(deletingRunId)}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-all shadow-md shadow-rose-600/20 flex items-center gap-1.5 active:scale-95 cursor-pointer"
+              >
+                {deletingRunId ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm & Delete</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
