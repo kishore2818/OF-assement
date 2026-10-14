@@ -5,24 +5,24 @@ export function IssueBadge({ severity, count = 0 }) {
   switch (severity) {
     case 'CRITICAL':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FEF2F2] text-[#DC2626] border border-[#FEE2E2]">
-          <AlertCircle className="w-3.5 h-3.5 text-[#DC2626]" />
-          Critical Issue {count > 1 ? `(${count})` : ''}
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FFF1F2] text-[#E11D48] border border-[#FECDD3]">
+          <AlertCircle className="w-3.5 h-3.5 text-[#E11D48] shrink-0" />
+          <span>Critical Issue {count > 1 ? `(${count})` : ''}</span>
         </span>
       );
     case 'WARNING':
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#D97706] border border-[#FEF3C7]">
-          <AlertTriangle className="w-3.5 h-3.5 text-[#F59E0B]" />
-          Warning {count > 1 ? `(${count})` : ''}
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A]">
+          <AlertTriangle className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+          <span>Warning {count > 1 ? `(${count})` : ''}</span>
         </span>
       );
     case 'NONE':
     default:
       return (
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#F0FDF4] text-[#16A34A] border border-[#DCFCE7]">
-          <CheckCircle2 className="w-3.5 h-3.5 text-[#16A34A]" />
-          Clear
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]">
+          <CheckCircle2 className="w-3.5 h-3.5 text-[#059669] shrink-0" />
+          <span>Clear</span>
         </span>
       );
   }

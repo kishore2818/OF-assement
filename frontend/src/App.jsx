@@ -5,16 +5,19 @@ import { Header } from './components/Header';
 import { DashboardPage } from './pages/DashboardPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { SettlementsPage } from './pages/SettlementsPage';
-import { DiscrepanciesPage } from './pages/DiscrepanciesPage';
+import { ExceptionsPage } from './pages/ExceptionsPage';
+import { ReconciliationRunsPage } from './pages/ReconciliationRunsPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { TransactionDetailPage } from './pages/TransactionDetailPage';
 import { ReconciliationModal } from './pages/ReconciliationModal';
+import { BottomNav } from './components/BottomNav';
 
 export default function App() {
-  const [evaluationDate, setEvaluationDate] = useState('2025-08-15');
+  const [evaluationDate, setEvaluationDate] = useState('');
   const [search, setSearch] = useState('');
   const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const triggerRefresh = () => {
@@ -23,14 +26,19 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-[#F8FAFC] text-[#111827] flex font-sans selection:bg-[#2563EB] selection:text-white">
-        {/* Dark Navy Sidebar */}
-        <Sidebar onOpenReconcile={() => setIsReconcileModalOpen(true)} />
+      <div className="min-h-screen bg-[#F7F9FC] text-[#0F1B4C] flex font-sans pb-16 lg:pb-0">
+        {/* Deep Obsidian Sidebar (Docked on desktop, drawer on mobile) */}
+        <Sidebar
+          isOpen={isMobileSidebarOpen}
+          onClose={() => setIsMobileSidebarOpen(false)}
+          onOpenReconcile={() => setIsReconcileModalOpen(true)}
+        />
 
         {/* Right Content Area */}
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Header with Search, Date Filter, and Prominent Reconcile Button */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+          {/* Header with Mobile Hamburger, Search, Date Filter, and Reconcile Button */}
           <Header
+            onOpenSidebar={() => setIsMobileSidebarOpen(true)}
             search={search}
             setSearch={setSearch}
             evaluationDate={evaluationDate}
@@ -39,8 +47,8 @@ export default function App() {
             onDataReset={triggerRefresh}
           />
 
-          {/* Main Pages Container */}
-          <main className="flex-1 max-w-7xl w-full mx-auto px-6 lg:px-8 pt-8">
+          {/* Main Pages Container (With pb-24 on mobile for bottom nav) */}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-8 pb-24 lg:pb-12">
             <Routes>
               <Route
                 path="/"
@@ -49,6 +57,7 @@ export default function App() {
                     evaluationDate={evaluationDate}
                     refreshKey={refreshKey}
                     search={search}
+                    onOpenReconcile={() => setIsReconcileModalOpen(true)}
                   />
                 }
               />
@@ -66,15 +75,31 @@ export default function App() {
                 element={<SettlementsPage refreshKey={refreshKey} />}
               />
               <Route
-                path="/discrepancies"
+                path="/exceptions"
                 element={
-                  <DiscrepanciesPage
+                  <ExceptionsPage
                     evaluationDate={evaluationDate}
                     refreshKey={refreshKey}
                   />
                 }
               />
-              <Route path="/reports" element={<ReportsPage />} />
+              <Route
+                path="/discrepancies"
+                element={
+                  <ExceptionsPage
+                    evaluationDate={evaluationDate}
+                    refreshKey={refreshKey}
+                  />
+                }
+              />
+              <Route
+                path="/runs"
+                element={<ReconciliationRunsPage refreshKey={refreshKey} />}
+              />
+              <Route
+                path="/reports"
+                element={<ReportsPage evaluationDate={evaluationDate} refreshKey={refreshKey} />}
+              />
               <Route
                 path="/settings"
                 element={
@@ -92,11 +117,14 @@ export default function App() {
             </Routes>
           </main>
 
-          {/* Footer */}
-          <footer className="border-t border-[#E2E8F0] bg-white py-6 text-center text-xs text-[#64748B] font-mono mt-12">
-            <p>OpenFabric Reconcile • Transaction Reconciliation System • SQLite & Express Engine</p>
+          {/* Footer (Hidden on mobile to save vertical space) */}
+          <footer className="hidden lg:block border-t border-[#D1D8E6]/60 bg-white py-6 text-center text-xs text-[#5B6487] font-mono mt-auto px-4">
+            <p>Open Fabric Reconcile • High-Precision Ledger Reconciliation Engine • SQLite Node</p>
           </footer>
         </div>
+
+        {/* Mobile Sticky Bottom Navigation Bar */}
+        <BottomNav onOpenReconcile={() => setIsReconcileModalOpen(true)} />
 
         {/* Reconciliation Modal */}
         <ReconciliationModal

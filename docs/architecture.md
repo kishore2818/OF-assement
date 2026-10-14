@@ -6,7 +6,7 @@ The Transaction Reconciliation System is designed as a modular, resilient financ
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    FinOps React Dashboard                    │
+│                OpenFabric Reconcile Dashboard                │
 │            (Vite + Tailwind CSS + Recharts + Router)         │
 └──────────────────────────────┬───────────────────────────────┘
                                │ REST APIs (JSON / Multipart)
@@ -90,3 +90,47 @@ The Transaction Reconciliation System is designed as a modular, resilient financ
   - Identical records are safely skipped (idempotent re-runs).
   - Conflicting data on identical IDs are flagged in the reconciliation error log.
 - Relational integrity: Foreign keys are enforced at runtime via `PRAGMA foreign_keys = ON;`.
+
+---
+
+## 4. OpenFabric Design System & Responsive Architecture
+
+### A. Curated Brand Color System
+
+| Role | Token / Name | Hex Code | Purpose & Usage |
+| :--- | :--- | :--- | :--- |
+| **Brand Primary** | `brand.600` | `#4F46E5` | OpenFabric Tech Cobalt-Indigo. Primary actions, active navigation, trend curves. |
+| **Brand Hover** | `brand.700` | `#4338CA` | Interactive hover & focus state. |
+| **Brand Accent** | `cyan.500` | `#06B6D4` | Electric Cyan micro-accents and logo gradient endpoint. |
+| **Deep Canvas** | `obsidian.950`| `#0B0F19` | Midnight Obsidian dark shell for persistent sidebar navigation. |
+| **Sidebar Borders** | `obsidian.800`| `#1E293B` | Structural boundary lines and status container borders. |
+| **App Canvas** | `surface.canvas`| `#F8FAFC` | Alabaster Slate neutral page background (glare-free, readable). |
+| **Surface Cards** | `surface.card`| `#FFFFFF` | Crisp pure white KPI cards, charts, and table containers. |
+| **Borders** | `border` | `#E2E8F0` | Fine card edges and table horizontal divider borders. |
+| **Headings** | `text.slate-900`| `#0F172A` | Maximum contrast typography for numbers, totals, and headings. |
+| **Muted Copy** | `text.slate-500`| `#64748B` | Subtitles, date formats, and secondary metadata. |
+
+### B. High-Contrast Financial Semantic States (WCAG AAA)
+
+- **Fully Settled**: `#059669` (Emerald 600) | Pill: `#ECFDF5` | Border: `#A7F3D0`
+- **Partial / Warning**: `#D97706` (Amber 600) | Pill: `#FFFBEB` | Border: `#FDE68A`
+- **Critical / Over-Settled**: `#E11D48` (Rose 600) | Pill: `#FFF1F2` | Border: `#FECDD3`
+- **Refund / Reversal**: `#7C3AED` (Violet 600) | Pill: `#F5F3FF` | Border: `#DDD6FE`
+- **Pending / Unreconciled**: `#475569` (Slate 600) | Pill: `#F1F5F9` | Border: `#E2E8F0`
+
+### C. Multi-Device Responsive Standards
+
+- **Mobile Viewports (< 768px)**:
+  - Slide-over drawer with backdrop overlay triggered via the header hamburger button.
+  - Stacked 1-column KPI cards and charts.
+  - Horizontal-scrolling table wrappers (`overflow-x-auto min-w-[700px]`) protecting all ledger columns from compression.
+  - Responsive modal overlays (`max-w-2xl max-h-[92vh] flex flex-col`).
+- **Tablet Viewports (768px - 1023px)**:
+  - Off-canvas drawer navigation.
+  - 2-column KPI cards and responsive flex filter bars.
+- **Desktop Viewports (≥ 1024px)**:
+  - Docked 64-column (`w-64`) persistent dark navigation.
+  - 4-column KPI cards and 3-column financial analytics suite.
+
+### D. Brand Favicon
+- Matches the OpenFabric sidebar logo: 32×32 SVG with a 135° diagonal gradient from `#4F46E5` to `#06B6D4`, housing the white `Layers` vector glyph.

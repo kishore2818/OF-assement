@@ -8,9 +8,15 @@ import {
   Copy,
   RefreshCw,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Download,
+  AlertCircle,
+  Eye,
+  ShieldCheck,
+  RotateCcw,
+  Layers
 } from 'lucide-react';
-import { runReconciliation } from '../services/api';
+import { previewReconciliation, runReconciliation, getRejectedItemsExportUrl } from '../services/api';
 
 const DEFAULT_CSV_SAMPLE = `settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
 SET001,LC001,ACC123,Amazon.com,2025-08-14,2025-08-15,125.99,DEBIT,USD
@@ -34,14 +40,34 @@ SET019,LC002,ACC124,Starbucks,2025-08-14,2025-08-15,1.50,CREDIT,USD
 SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD`;
 
 export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
+  // Wizard Stages: 'INPUT' -> 'PREVIEW' -> 'RESULT'
+  const [stage, setStage] = useState('INPUT');
   const [selectedFile, setSelectedFile] = useState(null);
   const [csvText, setCsvText] = useState('');
   const [inputMode, setInputMode] = useState('preset');
+
+  // Preview & Processing state
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewData, setPreviewData] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
   if (!isOpen) return null;
+
+  function resetState() {
+    setStage('INPUT');
+    setSelectedFile(null);
+    setCsvText('');
+    setPreviewData(null);
+    setResult(null);
+    setErrorMsg(null);
+  }
+
+  function handleClose() {
+    resetState();
+    onClose();
+  }
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -49,33 +75,59 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
     }
   };
 
-  const handleRunReconciliation = async () => {
+  function getPayload() {
+    let payload;
+    let fileName = 'settlement_batch.csv';
+
+    if (inputMode === 'file') {
+      if (!selectedFile) throw new Error('Please select a CSV file first.');
+      payload = selectedFile;
+      fileName = selectedFile.name;
+    } else if (inputMode === 'paste') {
+      if (!csvText.trim()) throw new Error('Please paste CSV contents.');
+      payload = csvText;
+      fileName = 'pasted_settlements.csv';
+    } else {
+      payload = DEFAULT_CSV_SAMPLE;
+      fileName = 'authoritative_sample_19_records.csv';
+    }
+    return { payload, fileName };
+  }
+
+  // Stage 1 -> 2: Validate & Preview
+  const handleValidateAndPreview = async () => {
+    try {
+      setPreviewLoading(true);
+      setErrorMsg(null);
+
+      const { payload, fileName } = getPayload();
+      const res = await previewReconciliation(payload, fileName);
+
+      if (!res.success) {
+        setErrorMsg(res.errors?.[0]?.error || 'Failed to preview CSV file.');
+        return;
+      }
+
+      setPreviewData(res);
+      setStage('PREVIEW');
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  // Stage 2 -> 3: Confirm & Ingest
+  const handleConfirmAndIngest = async () => {
     try {
       setProcessing(true);
       setErrorMsg(null);
-      setResult(null);
 
-      let payload;
-      if (inputMode === 'file') {
-        if (!selectedFile) {
-          setErrorMsg('Please select a CSV file first.');
-          setProcessing(false);
-          return;
-        }
-        payload = selectedFile;
-      } else if (inputMode === 'paste') {
-        if (!csvText.trim()) {
-          setErrorMsg('Please paste CSV contents.');
-          setProcessing(false);
-          return;
-        }
-        payload = csvText;
-      } else {
-        payload = DEFAULT_CSV_SAMPLE;
-      }
+      const { payload, fileName } = getPayload();
+      const res = await runReconciliation(payload, fileName);
 
-      const res = await runReconciliation(payload);
       setResult(res);
+      setStage('RESULT');
       if (onReconciled) onReconciled();
     } catch (err) {
       setErrorMsg(err.message);
@@ -85,161 +137,301 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl border border-[#E2E8F0] shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
+      <div className="relative w-full max-w-3xl bg-white rounded-t-3xl sm:rounded-2xl border-t sm:border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[88vh] animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-200">
+        {/* Mobile Drag Indicator Handle */}
+        <div className="sm:hidden w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-2 shrink-0"></div>
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0] bg-[#F8FAFC]">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-50 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-[#EFF6FF] text-[#2563EB] border border-[#DBEAFE]">
-              <UploadCloud className="w-5 h-5" />
+            <div className="p-2 rounded-xl bg-[#E6FAF5] text-[#1EC8A5] border border-[#B3F0E1]">
+              <UploadCloud className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#111827]">Ingest & Reconcile Settlement CSV</h3>
-              <p className="text-xs text-[#64748B]">Match processor tranches and update ledger balances</p>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                  {stage === 'INPUT' && 'Ingest & Reconcile Settlement CSV'}
+                  {stage === 'PREVIEW' && 'Pre-Import Validation & Schema Preview'}
+                  {stage === 'RESULT' && 'Reconciliation Execution Report'}
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1EC8A5]/10 text-[#1EC8A5] border border-[#1EC8A5]/20 font-mono">
+                  {stage === 'INPUT' && 'Step 1 of 3'}
+                  {stage === 'PREVIEW' && 'Step 2 of 3'}
+                  {stage === 'RESULT' && 'Step 3 of 3 (Complete)'}
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-500 font-sans">
+                {stage === 'INPUT' && 'Select sample dataset, upload CSV file, or paste raw batch records'}
+                {stage === 'PREVIEW' && 'Verify matching diagnostics, warnings, and duplicates before committing'}
+                {stage === 'RESULT' && 'Audit summary of inserted settlements and updated ledger accounts'}
+              </p>
             </div>
           </div>
+
           <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-[#64748B] hover:text-[#111827] hover:bg-[#E2E8F0] transition-colors"
+            onClick={handleClose}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-6 space-y-6">
-          {/* Mode Switcher */}
-          <div className="flex p-1 bg-[#F1F5F9] rounded-xl border border-[#E2E8F0] text-xs font-semibold">
-            <button
-              onClick={() => { setInputMode('preset'); setResult(null); }}
-              className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                inputMode === 'preset' ? 'bg-white text-[#2563EB] shadow-xs' : 'text-[#64748B] hover:text-[#111827]'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              Exercise Provided Dataset
-            </button>
-            <button
-              onClick={() => { setInputMode('file'); setResult(null); }}
-              className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                inputMode === 'file' ? 'bg-white text-[#2563EB] shadow-xs' : 'text-[#64748B] hover:text-[#111827]'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              Upload File
-            </button>
-            <button
-              onClick={() => { setInputMode('paste'); setResult(null); }}
-              className={`flex-1 py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                inputMode === 'paste' ? 'bg-white text-[#2563EB] shadow-xs' : 'text-[#64748B] hover:text-[#111827]'
-              }`}
-            >
-              <Copy className="w-3.5 h-3.5" />
-              Paste CSV
-            </button>
-          </div>
-
-          {/* Preset Info */}
-          {inputMode === 'preset' && (
-            <div className="rounded-xl border border-[#DCFCE7] bg-[#F0FDF4] p-4 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-[#16A34A] shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-sm font-semibold text-[#15803D]">Authoritative Exercise Dataset</h4>
-                <p className="text-xs text-[#166534] mt-1 leading-relaxed">
-                  Includes 19 test settlement records from the assignment, covering primary lifecycle matches, fallback composite matches (Corner Deli, Shell Gas), partial tranches, complex refund credits, over-settlement (Walmart), and unmatched records (Disney Plus, failed Amazon, Uber Taxi).
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* File Upload Zone */}
-          {inputMode === 'file' && (
-            <div className="border-2 border-dashed border-[#CBD5E1] hover:border-[#2563EB] rounded-xl p-8 text-center transition-colors bg-[#F8FAFC]">
-              <input
-                type="file"
-                accept=".csv"
-                id="csvFileInput"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <label htmlFor="csvFileInput" className="cursor-pointer block">
-                <UploadCloud className="w-10 h-10 text-[#64748B] mx-auto mb-3" />
-                <span className="text-sm font-semibold text-[#111827] block">
-                  {selectedFile ? selectedFile.name : 'Click to select or drag and drop a settlement CSV'}
-                </span>
-                <span className="text-xs text-[#64748B] mt-1 block">Supported format: UTF-8 CSV with standard header fields</span>
-              </label>
-            </div>
-          )}
-
-          {/* Raw Text Input */}
-          {inputMode === 'paste' && (
-            <div>
-              <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-2">
-                Paste CSV Data
-              </label>
-              <textarea
-                rows={6}
-                value={csvText}
-                onChange={(e) => setCsvText(e.target.value)}
-                placeholder="settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency&#10;SET001,LC001,ACC123,..."
-                className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-3 text-xs font-mono text-[#111827] focus:outline-none focus:border-[#2563EB]"
-              />
-            </div>
-          )}
-
-          {/* Error notification */}
+        {/* Modal Body */}
+        <div className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 font-sans">
+          {/* Error Banner */}
           {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-[#FEF2F2] border border-[#FEE2E2] text-[#DC2626] text-xs flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0 text-[#DC2626]" />
+            <div className="p-3.5 rounded-xl bg-[#FFF1F2] border border-[#FECDD3] text-[#E11D48] text-xs flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-[#E11D48]" />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          {/* Execution Results View */}
-          {result && (
-            <div className="space-y-4 pt-2 border-t border-[#E2E8F0]">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#111827] flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#16A34A]" />
-                  Reconciliation Execution Report
-                </h4>
-                <span className="text-[11px] font-mono text-[#16A34A] bg-[#F0FDF4] px-2 py-0.5 rounded border border-[#DCFCE7]">
-                  Status: Completed
-                </span>
+          {/* ──────────────── STAGE 1: INPUT ──────────────── */}
+          {stage === 'INPUT' && (
+            <div className="space-y-4">
+              {/* Mode Switcher */}
+              <div className="flex flex-col sm:flex-row p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold gap-1">
+                <button
+                  onClick={() => setInputMode('preset')}
+                  className={`flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                    inputMode === 'preset' ? 'bg-white text-[#1EC8A5] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#1EC8A5]" />
+                  Authoritative Test Dataset (19 Rows)
+                </button>
+                <button
+                  onClick={() => setInputMode('file')}
+                  className={`flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                    inputMode === 'file' ? 'bg-white text-[#1EC8A5] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Upload CSV File
+                </button>
+                <button
+                  onClick={() => setInputMode('paste')}
+                  className={`flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                    inputMode === 'paste' ? 'bg-white text-[#1EC8A5] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  Paste CSV Text
+                </button>
               </div>
 
-              {/* KPI Cards Grid */}
+              {/* Preset Description */}
+              {inputMode === 'preset' && (
+                <div className="rounded-xl border border-[#A7F3D0] bg-[#ECFDF5] p-4 flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#059669] shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-semibold text-[#065F46]">Exercise Provided Dataset</h4>
+                    <p className="text-xs text-[#047857] leading-relaxed">
+                      Contains 19 test settlement records covering all required technical scenarios:
+                      primary lifecycle matches, fallback composite keys (Corner Deli, Shell Gas), multi-tranche partials,
+                      complex refund credits (Apple), over-settlement (Walmart), and quarantined unmatched records (Disney Plus).
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* File Upload Zone */}
+              {inputMode === 'file' && (
+                <div className="border-2 border-dashed border-slate-300 hover:border-[#1EC8A5] rounded-xl p-6 sm:p-8 text-center transition-colors bg-slate-50">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    id="csvFileInput"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <label htmlFor="csvFileInput" className="cursor-pointer block">
+                    <UploadCloud className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                    <span className="text-sm font-semibold text-slate-900 block">
+                      {selectedFile ? selectedFile.name : 'Click to select or drag and drop a settlement CSV'}
+                    </span>
+                    <span className="text-xs text-slate-500 mt-1 block">
+                      Supported format: UTF-8 CSV with required headers • Max 10MB
+                    </span>
+                  </label>
+                </div>
+              )}
+
+              {/* Raw Text Input */}
+              {inputMode === 'paste' && (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
+                    Paste CSV Data
+                  </label>
+                  <textarea
+                    rows={7}
+                    value={csvText}
+                    onChange={(e) => setCsvText(e.target.value)}
+                    placeholder="settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency&#10;SET001,LC001,ACC123,..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-mono text-slate-900 focus:outline-hidden focus:border-[#1EC8A5] focus:ring-2 focus:ring-[#1EC8A5]/10"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ──────────────── STAGE 2: PREVIEW & VALIDATION ──────────────── */}
+          {stage === 'PREVIEW' && previewData && (
+            <div className="space-y-4">
+              {/* File Metadata & Diagnostics Strip */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <div className="p-3 bg-[#F8FAFC] rounded-xl border border-[#E2E8F0]">
-                  <span className="text-[10px] text-[#64748B] uppercase font-semibold">Records Read</span>
-                  <p className="text-xl font-bold text-[#111827] mt-1">{result.summary.recordsRead}</p>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">Total Rows</span>
+                  <p className="text-xl font-bold font-mono text-slate-900 mt-1">{previewData.totalRows}</p>
                 </div>
-                <div className="p-3 bg-[#F0FDF4] rounded-xl border border-[#DCFCE7]">
-                  <span className="text-[10px] text-[#16A34A] uppercase font-semibold">Inserted</span>
-                  <p className="text-xl font-bold text-[#16A34A] mt-1">{result.summary.newSettlementsInserted}</p>
+                <div className="p-3 bg-[#ECFDF5] rounded-xl border border-[#A7F3D0]">
+                  <span className="text-[10px] text-[#059669] uppercase font-semibold">Valid Matches</span>
+                  <p className="text-xl font-bold font-mono text-[#059669] mt-1">{previewData.validRows}</p>
                 </div>
-                <div className="p-3 bg-[#FFFBEB] rounded-xl border border-[#FEF3C7]">
-                  <span className="text-[10px] text-[#D97706] uppercase font-semibold">Duplicates</span>
-                  <p className="text-xl font-bold text-[#D97706] mt-1">{result.summary.duplicatesSkipped}</p>
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">Safe Duplicates</span>
+                  <p className="text-xl font-bold font-mono text-slate-700 mt-1">{previewData.duplicateRows}</p>
                 </div>
-                <div className="p-3 bg-[#FEF2F2] rounded-xl border border-[#FEE2E2]">
-                  <span className="text-[10px] text-[#DC2626] uppercase font-semibold">Unmatched</span>
-                  <p className="text-xl font-bold text-[#DC2626] mt-1">{result.summary.unmatchedRecords}</p>
+                <div className="p-3 bg-[#FFF1F2] rounded-xl border border-[#FECDD3]">
+                  <span className="text-[10px] text-[#E11D48] uppercase font-semibold">Issues / Warnings</span>
+                  <p className="text-xl font-bold font-mono text-[#E11D48] mt-1">{previewData.invalidRows}</p>
                 </div>
               </div>
 
-              {/* Unmatched / Quarantined Records Details */}
-              {result.unmatched && result.unmatched.length > 0 && (
-                <div className="bg-[#F8FAFC] rounded-xl border border-[#E2E8F0] p-3 space-y-2">
-                  <span className="text-xs font-semibold text-[#DC2626] block">
-                    Unmatched / Quarantined Entries ({result.unmatched.length})
+              {/* Pre-Import Preview Table */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
+                <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
+                    Pre-Import Diagnostic Preview ({previewData.previewRows.length} sample rows)
                   </span>
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 font-mono">
+                  <span className="text-slate-500 font-mono text-[10px]">
+                    {previewData.fileName} • {(previewData.fileSizeBytes / 1024).toFixed(1)} KB
+                  </span>
+                </div>
+
+                <div className="max-h-60 overflow-y-auto">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-slate-50/70 border-b border-slate-200 text-slate-500 text-[10px] uppercase">
+                      <tr>
+                        <th className="px-3 py-2">Row</th>
+                        <th className="px-3 py-2">Settlement ID</th>
+                        <th className="px-3 py-2">Merchant</th>
+                        <th className="px-3 py-2 text-right">Amount</th>
+                        <th className="px-3 py-2">Validation Status</th>
+                        <th className="px-3 py-2">Diagnostic Detail</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {previewData.previewRows.map((row) => (
+                        <tr key={row.row_number} className="hover:bg-slate-50/50">
+                          <td className="px-3 py-2 text-slate-400">{row.row_number}</td>
+                          <td className="px-3 py-2 font-bold text-[#1EC8A5]">{row.settlement_id}</td>
+                          <td className="px-3 py-2 font-sans font-medium text-slate-800">{row.merchant_name}</td>
+                          <td className="px-3 py-2 text-right font-bold text-slate-900">
+                            ${row.settlement_amount ? row.settlement_amount.toFixed(2) : '0.00'}
+                          </td>
+                          <td className="px-3 py-2 font-sans">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                row.status === 'VALID_MATCH'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : row.status === 'DUPLICATE'
+                                  ? 'bg-slate-100 text-slate-700'
+                                  : row.status === 'POTENTIAL_UNMATCHED'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {row.status.replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 font-sans text-slate-500 text-[11px] truncate max-w-xs">
+                            {row.status_message}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ──────────────── STAGE 3: RESULT REPORT ──────────────── */}
+          {stage === 'RESULT' && result && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-bold text-emerald-900">Reconciliation Completed Successfully</h4>
+                    <p className="text-xs text-emerald-700 font-mono">
+                      Run Reference: {result.runId || 'N/A'} • All SQLite updates committed
+                    </p>
+                  </div>
+                </div>
+                {result.runId && (result.summary.invalidRecords > 0 || result.summary.unmatchedRecords > 0) && (
+                  <a
+                    href={getRejectedItemsExportUrl(result.runId)}
+                    download
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 shadow-xs"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download Rejected CSV
+                  </a>
+                )}
+              </div>
+
+              {/* Execution Summary KPIs */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                  <span className="text-[10px] text-slate-500 uppercase font-semibold">Records Read</span>
+                  <p className="text-xl font-bold font-mono text-slate-900 mt-1">{result.summary.recordsRead}</p>
+                </div>
+                <div className="p-3 bg-[#ECFDF5] rounded-xl border border-[#A7F3D0]">
+                  <span className="text-[10px] text-[#059669] uppercase font-semibold">Inserted</span>
+                  <p className="text-xl font-bold font-mono text-[#059669] mt-1">{result.summary.newSettlementsInserted}</p>
+                </div>
+                <div className="p-3 bg-[#FFFBEB] rounded-xl border border-[#FDE68A]">
+                  <span className="text-[10px] text-[#D97706] uppercase font-semibold">Duplicates Skipped</span>
+                  <p className="text-xl font-bold font-mono text-[#D97706] mt-1">{result.summary.duplicatesSkipped}</p>
+                </div>
+                <div className="p-3 bg-[#FFF1F2] rounded-xl border border-[#FECDD3]">
+                  <span className="text-[10px] text-[#E11D48] uppercase font-semibold">Unmatched</span>
+                  <p className="text-xl font-bold font-mono text-[#E11D48] mt-1">{result.summary.unmatchedRecords}</p>
+                </div>
+              </div>
+
+              {/* Unmatched / Quarantined Entries */}
+              {result.unmatched && result.unmatched.length > 0 && (
+                <div className="bg-slate-50 rounded-xl border border-slate-200 p-3 space-y-2">
+                  <span className="text-xs font-semibold text-[#E11D48] block">
+                    Unmatched / Quarantined Records ({result.unmatched.length})
+                  </span>
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 font-mono text-xs">
                     {result.unmatched.map((item, idx) => (
-                      <div key={idx} className="p-2 bg-white rounded-lg text-xs border border-[#E2E8F0] flex items-start justify-between gap-2">
+                      <div key={idx} className="p-2 bg-white rounded-lg border border-slate-200 flex items-start justify-between gap-2">
                         <span className="text-[#D97706] font-semibold">{item.settlement_id}</span>
-                        <span className="text-[#64748B] text-right flex-1">{item.reason}</span>
+                        <span className="text-slate-500 text-right flex-1">{item.reason}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Conflicting Duplicate Records & Validation Errors */}
+              {result.errors && result.errors.length > 0 && (
+                <div className="bg-rose-50/80 rounded-xl border border-rose-200 p-3 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-800">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>Conflicting Duplicates & Rejected Rows ({result.errors.length})</span>
+                  </div>
+                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1 font-mono text-xs">
+                    {result.errors.map((item, idx) => (
+                      <div key={idx} className="p-2 bg-white rounded-lg border border-rose-200 flex items-start justify-between gap-2">
+                        <span className="text-rose-700 font-bold shrink-0">{item.recordId || `Row ${item.rowNumber}`}</span>
+                        <span className="text-slate-700 font-sans text-[11px] text-right flex-1">{item.error}</span>
                       </div>
                     ))}
                   </div>
@@ -249,32 +441,76 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#E2E8F0] bg-[#F8FAFC]">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-[#64748B] hover:text-[#111827] transition-colors"
-          >
-            {result ? 'Done' : 'Cancel'}
-          </button>
+        {/* Modal Footer Controls */}
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-t border-slate-200 bg-slate-50 shrink-0">
+          {stage === 'INPUT' && (
+            <>
+              <button
+                onClick={handleClose}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleValidateAndPreview}
+                disabled={previewLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1EC8A5] hover:bg-[#19B494] text-white font-bold text-xs shadow-md shadow-[#1EC8A5]/25 disabled:opacity-50 transition-all"
+              >
+                {previewLoading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Validating CSV...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Validate & Preview CSV</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </>
+          )}
 
-          <button
-            onClick={handleRunReconciliation}
-            disabled={processing}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-md shadow-[#2563EB]/20 disabled:opacity-50 transition-all"
-          >
-            {processing ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                <span>Processing Batch...</span>
-              </>
-            ) : (
-              <>
-                <span>Run Reconciliation</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
+          {stage === 'PREVIEW' && (
+            <>
+              <button
+                onClick={() => setStage('INPUT')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                Back to Edit
+              </button>
+              <button
+                onClick={handleConfirmAndIngest}
+                disabled={processing}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/25 disabled:opacity-50 transition-all"
+              >
+                {processing ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                    <span>Committing to SQLite...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Confirm & Commit Reconciliation</span>
+                  </>
+                )}
+              </button>
+            </>
+          )}
+
+          {stage === 'RESULT' && (
+            <>
+              <div />
+              <button
+                onClick={handleClose}
+                className="px-5 py-2.5 rounded-xl bg-[#1EC8A5] hover:bg-[#19B494] text-white font-bold text-xs shadow-md transition-all"
+              >
+                Close & View Live Dashboard
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

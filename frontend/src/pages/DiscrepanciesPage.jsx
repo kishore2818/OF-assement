@@ -27,42 +27,42 @@ export function DiscrepanciesPage({ evaluationDate, refreshKey }) {
   }, [evaluationDate, refreshKey]);
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex items-center justify-between bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-xs">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#111827]">Discrepancies & Exceptions</h1>
-          <p className="text-sm text-[#64748B] mt-1">Review flagged items requiring FinOps intervention or acquirer follow-up.</p>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">Discrepancies & Exceptions</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">Review flagged items requiring FinOps intervention or acquirer follow-up.</p>
         </div>
-        <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[#FEF2F2] border border-[#FEE2E2] text-[#DC2626]">
+        <span className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-[#FFF1F2] border border-[#FECDD3] text-[#E11D48] self-start sm:self-auto">
           {issues.length} Active Exceptions
         </span>
       </div>
 
       <div className="space-y-4">
         {loading ? (
-          <div className="py-20 text-center space-y-3 bg-white rounded-2xl border border-[#E2E8F0]">
-            <RefreshCw className="w-6 h-6 text-[#2563EB] animate-spin mx-auto" />
-            <p className="text-xs text-[#64748B] font-mono">Analyzing discrepancy flags...</p>
+          <div className="py-20 text-center space-y-3 bg-white rounded-2xl border border-slate-200">
+            <RefreshCw className="w-6 h-6 text-[#1EC8A5] animate-spin mx-auto" />
+            <p className="text-xs text-slate-500 font-mono">Analyzing discrepancy flags...</p>
           </div>
         ) : issues.length === 0 ? (
-          <div className="py-20 text-center text-[#16A34A] bg-white rounded-2xl border border-[#E2E8F0]">
+          <div className="py-20 text-center text-[#059669] bg-white rounded-2xl border border-slate-200">
             <p className="text-base font-bold">No active discrepancies found!</p>
-            <p className="text-xs text-[#64748B] mt-1">All processed transactions are cleanly reconciled.</p>
+            <p className="text-xs text-slate-500 mt-1">All processed transactions are cleanly reconciled.</p>
           </div>
         ) : (
           issues.map((t) => (
-            <div key={t.transaction_id} className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-[#111827] text-sm">{t.transaction_id}</span>
-                  <span className="text-xs font-medium text-[#475569]">{t.merchant_name}</span>
+            <div key={t.transaction_id} className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                  <span className="font-mono font-bold text-slate-900 text-sm">{t.transaction_id}</span>
+                  <span className="text-xs font-medium text-slate-600">{t.merchant_name}</span>
                   <StatusBadge status={t.settlement_status} size="sm" />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 self-start sm:self-auto">
                   <IssueBadge severity={t.primary_issue_severity} count={t.issues?.length} />
                   <Link
                     to={`/transactions/${t.transaction_id}`}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#2563EB] text-xs font-semibold transition-colors"
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#E6FAF5] hover:bg-[#B3F0E1] text-[#1EC8A5] text-xs font-semibold transition-colors"
                   >
                     Investigate
                     <ExternalLink className="w-3 h-3" />
@@ -71,20 +71,20 @@ export function DiscrepanciesPage({ evaluationDate, refreshKey }) {
               </div>
 
               {/* Exception Details */}
-              <div className="space-y-2 pt-2 border-t border-[#F1F5F9]">
+              <div className="space-y-2 pt-2 border-t border-slate-100">
                 {t.issues.map((issue, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs space-y-1">
+                  <div key={idx} className="p-3 sm:p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
                     <div className="flex items-center gap-2 font-semibold">
                       {issue.severity === 'CRITICAL' ? (
-                        <AlertCircle className="w-4 h-4 text-[#DC2626]" />
+                        <AlertCircle className="w-4 h-4 text-[#E11D48] shrink-0" />
                       ) : (
-                        <AlertTriangle className="w-4 h-4 text-[#F59E0B]" />
+                        <AlertTriangle className="w-4 h-4 text-[#D97706] shrink-0" />
                       )}
-                      <span className="font-mono text-[#111827]">[{issue.code}]</span>
-                      <span className="text-[#334155]">{issue.description}</span>
+                      <span className="font-mono text-slate-900">[{issue.code}]</span>
+                      <span className="text-slate-700">{issue.description}</span>
                     </div>
-                    <p className="text-[#64748B] pl-6 text-[11px]">
-                      <strong>Action:</strong> {issue.recommendation}
+                    <p className="text-slate-500 pl-6 text-[11px] leading-relaxed">
+                      <strong className="text-slate-700">Action:</strong> {issue.recommendation}
                     </p>
                   </div>
                 ))}

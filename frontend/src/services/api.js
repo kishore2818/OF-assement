@@ -1,19 +1,21 @@
 const API_BASE = 'http://localhost:4000';
 
-export async function fetchSummary(evaluationDate) {
+export async function fetchSummary(evaluationDate, runId) {
   const url = new URL(`${API_BASE}/dashboard/summary`);
   if (evaluationDate) url.searchParams.set('evaluationDate', evaluationDate);
+  if (runId && runId !== 'ALL') url.searchParams.set('runId', runId);
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`Failed to fetch summary: ${res.statusText}`);
   return res.json();
 }
 
-export async function fetchTransactions({ status, severity, search, evaluationDate } = {}) {
+export async function fetchTransactions({ status, severity, search, evaluationDate, runId } = {}) {
   const url = new URL(`${API_BASE}/transactions`);
   if (status && status !== 'ALL') url.searchParams.set('status', status);
   if (severity && severity !== 'ALL') url.searchParams.set('severity', severity);
   if (search) url.searchParams.set('search', search);
   if (evaluationDate) url.searchParams.set('evaluationDate', evaluationDate);
+  if (runId && runId !== 'ALL') url.searchParams.set('runId', runId);
 
   const res = await fetch(url.toString());
   if (!res.ok) throw new Error(`Failed to fetch transactions: ${res.statusText}`);
@@ -29,7 +31,31 @@ export async function fetchTransactionById(id, evaluationDate) {
   return res.json();
 }
 
-export async function runReconciliation(fileOrText) {
+export async function previewReconciliation(fileOrText, fileName = 'settlement_upload.csv') {
+  let res;
+  if (fileOrText instanceof File) {
+    const formData = new FormData();
+    formData.append('file', fileOrText);
+    res = await fetch(`${API_BASE}/reconcile/preview`, {
+      method: 'POST',
+      body: formData,
+    });
+  } else {
+    res = await fetch(`${API_BASE}/reconcile/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csv: fileOrText, fileName }),
+    });
+  }
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `CSV preview validation failed (${res.status})`);
+  }
+  return res.json();
+}
+
+export async function runReconciliation(fileOrText, fileName = 'settlement_upload.csv') {
   let res;
   if (fileOrText instanceof File) {
     const formData = new FormData();
@@ -42,7 +68,7 @@ export async function runReconciliation(fileOrText) {
     res = await fetch(`${API_BASE}/reconcile`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ csv: fileOrText }),
+      body: JSON.stringify({ csv: fileOrText, fileName }),
     });
   }
 
@@ -53,18 +79,103 @@ export async function runReconciliation(fileOrText) {
   return res.json();
 }
 
-export async function resetDatabase() {
-  const res = await fetch(`${API_BASE}/reconcile/reset`, { method: 'POST' });
-  if (!res.ok) throw new Error('Failed to reset database');
+export async function fetchReconciliationRuns({ limit = 50, offset = 0 } = {}) {
+  const url = new URL(`${API_BASE}/reconciliation-runs`);
+  url.searchParams.set('limit', limit);
+  url.searchParams.set('offset', offset);
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`Failed to fetch runs: ${res.statusText}`);
   return res.json();
+}
+
+export async function fetchReconciliationRunById(runId) {
+  const res = await fetch(`${API_BASE}/reconciliation-runs/${encodeURIComponent(runId)}`);
+  if (!res.ok) throw new Error(`Failed to fetch run ${runId}: ${res.statusText}`);
+  return res.json();
+}
+
+export function getRejectedItemsExportUrl(runId) {
+  return `${API_BASE}/reconciliation-runs/${encodeURIComponent(runId)}/export-rejected`;
+}
+
+export async function deleteReconciliationRun(runId) {
+  const res = await fetch(`${API_BASE}/reconciliation-runs/${encodeURIComponent(runId)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to delete reconciliation run: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function fetchExceptions({ severity, reviewStatus, issueType, search, evaluationDate } = {}) {
+  const url = new URL(`${API_BASE}/exceptions`);
+  if (severity && severity !== 'ALL') url.searchParams.set('severity', severity);
+  if (reviewStatus && reviewStatus !== 'ALL') url.searchParams.set('reviewStatus', reviewStatus);
+  if (issueType && issueType !== 'ALL') url.searchParams.set('issueType', issueType);
+  if (search) url.searchParams.set('search', search);
+  if (evaluationDate) url.searchParams.set('evaluationDate', evaluationDate);
+
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error(`Failed to fetch exceptions: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchExceptionById(id) {
+  const res = await fetch(`${API_BASE}/exceptions/${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error(`Failed to fetch exception ${id}: ${res.statusText}`);
+  return res.json();
+}
+
+export async function updateExceptionReview(id, { reviewStatus, notes, reviewedBy }) {
+  const res = await fetch(`${API_BASE}/exceptions/${encodeURIComponent(id)}/review`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reviewStatus, notes, reviewedBy }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Failed to update exception review: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export function getExceptionsExportUrl({ severity, reviewStatus, search } = {}) {
+  const url = new URL(`${API_BASE}/exceptions/export`);
+  if (severity && severity !== 'ALL') url.searchParams.set('severity', severity);
+  if (reviewStatus && reviewStatus !== 'ALL') url.searchParams.set('reviewStatus', reviewStatus);
+  if (search) url.searchParams.set('search', search);
+  return url.toString();
+}
+
+export function getFilteredTransactionsExportUrl({ status, severity, search, evaluationDate } = {}) {
+  const url = new URL(`${API_BASE}/transactions/export`);
+  if (status && status !== 'ALL') url.searchParams.set('status', status);
+  if (severity && severity !== 'ALL') url.searchParams.set('severity', severity);
+  if (search) url.searchParams.set('search', search);
+  if (evaluationDate) url.searchParams.set('evaluationDate', evaluationDate);
+  return url.toString();
 }
 
 export function getExportUrl() {
   return `${API_BASE}/transactions/export`;
 }
 
-export async function fetchSettlements() {
-  const res = await fetch(`${API_BASE}/settlements`);
+export function getTransactionSettlementsExportUrl(transactionId) {
+  return `${API_BASE}/transactions/${encodeURIComponent(transactionId)}/export-settlements`;
+}
+
+export async function resetDatabase() {
+  const res = await fetch(`${API_BASE}/reconcile/reset`, { method: 'POST' });
+  if (!res.ok) throw new Error('Failed to reset database');
+  return res.json();
+}
+
+export async function fetchSettlements(runId) {
+  const url = new URL(`${API_BASE}/settlements`);
+  if (runId && runId !== 'ALL') url.searchParams.set('runId', runId);
+  const res = await fetch(url.toString());
   if (!res.ok) throw new Error('Failed to fetch settlements');
   return res.json();
 }

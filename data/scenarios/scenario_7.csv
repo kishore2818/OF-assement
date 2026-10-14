@@ -1,0 +1,3 @@
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET008,LC006,ACC128,Target,2025-08-14,2025-08-15,87.25,DEBIT,USD
+SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
