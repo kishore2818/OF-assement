@@ -1,250 +1,633 @@
-# Transaction Reconciliation System — Financial Operations Platform
+<div align="center">
 
-A production-grade **Transaction Reconciliation and Financial Operations Platform** built for high-accuracy settlement matching, ledger balance synchronization, explainable discrepancy triage, and immutable audit trails.
+# ⚡ OpenFabric — Transaction Reconciliation & Financial Operations Platform
 
----
+<p align="center">
+  <strong>A high-accuracy, production-grade financial settlement reconciliation engine with explainable discrepancy triage, deterministic multi-tier matching, immutable audit trails, and enterprise JWT security.</strong>
+</p>
 
-## 📌 Executive Summary & Architecture
-
-In modern fintech systems, internal transaction authorization records must be reconciled against subsequent processor and acquirer settlement files. This platform implements:
-
-1. **Two-Tier Deterministic Matching Engine**:
-   - **Tier 1 (Primary)**: Exact matching via `lifecycle_id`.
-   - **Tier 2 (Fallback Composite Key)**: Fallback matching via `account_id` + `merchant_name` + `transaction_date`.
-   - Guaranteed non-association on `FAILED` or `DECLINED` transactions.
-   - Ambiguous key resolution (rejects multiple candidates rather than guessing).
-2. **Exact Integer-Cents Arithmetic**:
-   - All financial balances and calculations are performed in integer cents to eliminate floating-point precision errors.
-   - Mathematical formula:
-     $$\text{Net Settled Amount} = \sum(\text{DEBIT Settlements}) - \sum(\text{CREDIT Settlements})$$
-3. **Reconciliation Run History & Ingestion Tracking (Enhancement A)**:
-   - Every CSV upload attempt creates an auditable record in SQLite (`reconciliation_runs`).
-   - Tracks total rows read, matched, newly inserted, duplicates skipped, invalid rejected, unmatched, and duration.
-   - Itemized event logs in `reconciliation_run_items`.
-   - Export rejected / unmatched records as CSV.
-   - **Upload Frequency Indicator**: Shows exactly how many times files have been uploaded, with click-to-view dashboard metrics for any individual run.
-4. **Exception Management Center (Enhancement B)**:
-   - Dedicated triage desk (`/exceptions`) for all financial discrepancies:
-     - 🔴 Over-settlement (`OVER_SETTLED_CRITICAL`)
-     - 🔴 Missing settlement after 7 days (`SETTLEMENT_OVERDUE_CRITICAL`)
-     - 🟡 Partial settlement warning (`PARTIAL_SETTLEMENT_WARNING`)
-     - 🟡 Unmatched batch records, ambiguous matches, currency mismatches
-   - Operational review workflow with persistent status (`UNREVIEWED`, `UNDER_REVIEW`, `RESOLVED`) and investigation notes saved in SQLite.
-5. **Interactive CSV Preview & Validation (Enhancement C)**:
-   - 3-stage upload wizard: Input $\rightarrow$ Pre-Import Preview & Schema Validation $\rightarrow$ Execution Report.
-   - Inspects headers, types, duplicate IDs, and potential matches before committing to the database.
-6. **Explainable Matching & Chronological Timeline (Enhancements D & E)**:
-   - Per-transaction and per-tranche explainable matching diagnosis.
-   - Running net settled balance on each settlement event.
-   - Chronological lifecycle timeline with DEBIT/CREDIT distinction.
-7. **Settlement Aging & Operational Analytics (Enhancement F)**:
-   - Grouping of outstanding transactions into aging bands: **0–3 days**, **4–7 days**, and **>7 days overdue**.
-   - Average days to full settlement, settlement completion rate, and excess settled amounts.
-8. **Filtered Exports (Enhancement G)**:
-   - Download filtered transactions as CSV.
-   - Download exceptions reports as CSV.
-   - Download reconciliation run rejected records as CSV.
-   - Download settlement history for individual transactions as CSV.
+[![Live Demo](https://img.shields.io/badge/🌐%20Live%20App-of--frontend.vercel.app-1EC8A5?style=for-the-badge&logo=vercel&logoColor=white)](https://of-frontend.vercel.app/)
+[![Backend API](https://img.shields.io/badge/⚡%20Backend%20API-Render%20Online-0F1B4C?style=for-the-badge&logo=render&logoColor=white)](https://of-backend.onrender.com)
+[![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-better--sqlite3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://sqlite.org/)
+[![JWT Security](https://img.shields.io/badge/Auth-JWT%20Bearer-black?style=for-the-badge&logo=json-web-tokens&logoColor=white)](https://jwt.io/)
 
 ---
 
-## 🛠️ Technology Stack
+### 🌐 Live Production Deployment
 
-| Layer | Technologies |
-| :--- | :--- |
-| **Frontend** | React 18, Vite, Tailwind CSS, Recharts, React Router v6, Lucide Icons |
-| **Backend** | Node.js (v20+), TypeScript (strict mode), Express.js, RESTful API |
-| **Database** | SQLite via `better-sqlite3`, ACID transactions, relational integrity |
-| **CSV Processing** | `csv-parse` (RFC-4180), Zod schema validator |
-| **Testing** | Vitest (34 unit and integration tests), Supertest |
+| Service | Environment | URL | Status |
+| :--- | :--- | :--- | :--- |
+| **Frontend Web App** | Vercel Edge Global CDN | [https://of-frontend.vercel.app/](https://of-frontend.vercel.app/) | `● Active` |
+| **Backend REST API** | Render Cloud Container | [https://of-backend.onrender.com](https://of-backend.onrender.com) | `● Active` |
+| **API Health Probe** | Health Check Endpoint | [https://of-backend.onrender.com/health](https://of-backend.onrender.com/health) | `● Online` |
+
+</div>
 
 ---
 
-## 🚀 Quick Start Guide
+## 🔐 Admin Demo Credentials
 
-### Prerequisites
-- **Node.js**: v20+
-- **npm**: v10+
+Access the live platform using the pre-seeded Lead Financial Auditor account:
 
-### 1. Backend Setup
-```bash
-cd backend
-npm install
-npm run build
-npm start
-# Backend server runs on http://localhost:4000
+```yaml
+Portal URL:  https://of-frontend.vercel.app/login
+Email:       admin@openfabric.co
+Password:    admin123
+Role:        Lead Financial Auditor (admin)
+Token Type:  RFC-7519 JSON Web Token (Bearer)
 ```
 
-### 2. Frontend Setup
-In a new terminal:
-```bash
-cd frontend
-npm install
-npm run dev
-# Frontend dashboard runs on http://localhost:3000
+> [!NOTE]
+> The platform automatically provisions the default administrator upon startup via database migrations. All authentication requests issue signed JWT tokens with 24-hour validity, securing both UI operations and REST API endpoints.
+
+---
+
+## 📑 Table of Contents
+
+1. [Executive Summary & Problem Statement](#-executive-summary--problem-statement)
+2. [Architectural Overview & System Flow](#-architectural-overview--system-flow)
+3. [Authentication & Security Architecture (JWT + CORS)](#-authentication--security-architecture-jwt--cors)
+4. [Sample Datasets & Business Scenarios (Complete Reference)](#-sample-datasets--business-scenarios-complete-reference)
+5. [Core Platform Features & Enhancements](#-core-platform-features--enhancements)
+6. [Design System & UI Color Scheme](#-design-system--ui-color-scheme)
+7. [REST API Documentation](#-rest-api-documentation)
+8. [Database Schema & Entity Relationship](#-database-schema--entity-relationship)
+9. [Automated Testing Suite](#-automated-testing-suite)
+10. [Local Development & Quick Start](#-local-development--quick-start)
+11. [Deployment & Environment Configuration](#-deployment--environment-configuration)
+
+---
+
+## 📌 Executive Summary & Problem Statement
+
+In modern fintech, internal transaction authorization records must be reconciled against subsequent processor and acquirer settlement files. This platform solves the core challenges of settlement reconciliation:
+
+1. **Two-Tier Deterministic Matching**: Resolves settlements via primary `lifecycle_id` and gracefully falls back to a composite key (`account_id` + `merchant_name` + `transaction_date`) when lifecycle IDs are omitted by acquirers.
+2. **Zero Floating-Point Drift**: Employs integer-cents arithmetic throughout all ledger balance computations to eliminate standard IEEE-754 floating-point inaccuracies.
+3. **Multi-Tranche Progression & Partial Refunds**: Correctly aggregates partial debit installments, credit refund adjustments, and over-settlement discrepancies.
+4. **Idempotent Ingestion & Quarantine**: Prevents duplicate settlement entries while detecting and isolating conflicting record alterations.
+5. **Auditable Exception Management Desk**: Delivers operational triage with persistent notes, review lifecycle statuses (`UNREVIEWED`, `UNDER_REVIEW`, `RESOLVED`), and audit tracking.
+
+---
+
+## 🏗️ Architectural Overview & System Flow
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                   OpenFabric Web Application (React 18)                │
+│       Vite • Tailwind CSS • Recharts • Lucide Icons • React Router     │
+│                 https://of-frontend.vercel.app/                        │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ CORS-Enabled HTTPS (JSON / Multipart)
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                 Express.js + TypeScript Application Node               │
+│                                                                        │
+│   ┌─────────────────────┐        ┌─────────────────────────────────┐   │
+│   │   Auth & JWT Svc    │        │  Two-Tier Deterministic Engine  │   │
+│   │ (bcrypt / Bearer)   │        │   (Tier 1 Primary / Fallback)   │   │
+│   └──────────┬──────────┘        └────────────────┬────────────────┘   │
+│              │                                    │                    │
+│   ┌──────────▼──────────┐        ┌────────────────▼────────────────┐   │
+│   │ Reconciliation Svc  │ ◄────► │  Integer-Cents Ledger Calculator│   │
+│   │ (csv-parse / Zod)   │        │     (Debit - Credit Balance)    │   │
+│   └──────────┬──────────┘        └────────────────┬────────────────┘   │
+│              │                                    │                    │
+│   ┌──────────▼──────────┐        ┌────────────────▼────────────────┐   │
+│   │ Exception Triage Svc│ ◄────► │ Operational Aging & Issue Engine│   │
+│   │ (Review LifeCycle)  │        │  (0-3d, 4-7d, >7d Overdue SLA)  │   │
+│   └─────────────────────┘        └─────────────────────────────────┘   │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Atomic Transactions (PRAGMA foreign_keys = ON)
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                   SQLite Database (better-sqlite3 Engine)              │
+│                                                                        │
+│   ┌───────────────────────┐             ┌──────────────────────────┐   │
+│   │     transactions      │ 1 ◄─────── N│    settlement_history    │   │
+│   └───────────┬───────────┘             └─────────────┬────────────┘   │
+│               │ 1                                     │ N              │
+│               ▼ N                                     ▼ 1              │
+│   ┌───────────────────────┐             ┌──────────────────────────┐   │
+│   │   exception_reviews   │             │   reconciliation_runs    │   │
+│   └───────────────────────┘             └─────────────┬────────────┘   │
+│                                                       │ 1              │
+│                                                       ▼ N              │
+│                                         ┌──────────────────────────┐   │
+│                                         │ reconciliation_run_items │   │
+│                                         └──────────────────────────┘   │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🧪 Automated Testing
+## 🔒 Authentication & Security Architecture (JWT + CORS)
 
-The project includes **34 automated tests** covering all assignment scenarios and enhancement requirements:
+### 1. Enterprise JWT Authentication Flow
+
+The system implements secure session management compliant with RFC-7519:
+
+```
+[Auditor Client]                      [Auth Controller]                  [Database]
+       │                                     │                                │
+       │─── 1. POST /auth/login ────────────►│                                │
+       │    { email, password }              │─── 2. Query user by email ────►│
+       │                                     │◄── 3. Return password hash ────│
+       │                                     │
+       │                                     │─── 4. bcrypt.compareSync()
+       │                                     │─── 5. jwt.sign(payload, secret)
+       │                                     │
+       │◄── 6. 200 OK + JWT Bearer Token ────│
+       │    { token, user: { role, email } } │
+       │
+       │─── 7. GET /auth/me ────────────────►│
+       │    Header: Authorization: Bearer <T>│─── 8. Verify JWT & Return Role
+```
+
+- **Password Storage**: Passwords hashed using `bcryptjs` with 10 salt rounds.
+- **Payload Schema**: Signed claims include `id`, `email`, `name`, and `role`.
+- **Session Expiry**: Configured for 24-hour token longevity.
+- **Client Guard**: Protected routes enforce valid session status, redirecting unauthorized users directly to `/login`.
+
+### 2. Cross-Origin Resource Sharing (CORS) Configuration
+
+To enable seamless, secure communication between the Vercel-hosted frontend (`https://of-frontend.vercel.app`) and the Render-hosted backend API (`https://of-backend.onrender.com`), the backend applies Express CORS middleware:
+
+```typescript
+// backend/src/app.ts & backend/src/config/index.ts
+import cors from 'cors';
+
+const app = express();
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
+```
+
+#### CORS Security Checklist:
+- **Preflight Support**: Gracefully responds to HTTP `OPTIONS` requests across all routes.
+- **Header Permissions**: Allows `Authorization: Bearer <token>` and `Content-Type: application/json`, `multipart/form-data`.
+- **Environment Driven**: `CORS_ORIGIN` configurable in production to restrict domains when required.
+- **Frontend Fallback**: The client dynamically checks `VITE_API_URL` and trims trailing slashes, ensuring no broken URL paths.
+
+---
+
+## 📊 Sample Datasets & Business Scenarios (Complete Reference)
+
+All sample scenarios are pre-packaged as individual CSV files in the repository root and can be tested immediately in the UI or via REST endpoints.
+
+### Summary Matrix of Scenarios
+
+| Scenario | Target Txn | Amount | Settlement File | Settlement Rows | Matching Mechanism | Resulting Status | Severity |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Scenario 1** | `TXN001` | $125.99 | `scenario_1.csv` | 1 DEBIT ($125.99) | Tier 1 (`LC001`) | `FULLY_SETTLED` | `CLEAR` 🟢 |
+| **Scenario 2** | `TXN003` | $45.30 | `scenario_2.csv` | 1 DEBIT ($35.30) | Tier 1 (`LC003`) | `PARTIAL` | `WARNING` 🟡 |
+| **Scenario 3** | `TXN004` | $899.99 | `scenario_3.csv` | 1 DEBIT + 1 CREDIT | Tier 1 (`LC004`) | `REFUNDED` | `CLEAR` 🟢 |
+| **Scenario 4** | `TXN007` | $156.78 | `scenario_4.csv` | 1 DEBIT ($180.78) | Tier 1 (`LC007`) | `OVER_SETTLED` | `CRITICAL` 🔴 |
+| **Scenario 5** | `TXN013` | $32.45 | `scenario_5.csv` | 1 DEBIT (No LC) | Tier 2 Composite Fallback | `FULLY_SETTLED` | `CLEAR` 🟢 |
+| **Scenario 6** | `TXN005` | $234.50 | `scenario_6.csv` | 2 DEBIT tranches | Tier 1 (`LC005`) | `PARTIAL` $\rightarrow$ `FULLY_SETTLED` | `CLEAR` 🟢 |
+| **Scenario 7** | `TXN006` | $87.25 | `scenario_7.csv` | 1 DEBIT + 1 CREDIT | Tier 1 (`LC006`) | `PARTIAL` ($75.00 net) | `WARNING` 🟡 |
+| **Master Batch**| Multiple | Multi | `all_scenarios_1_to_7.csv`| 10 records | Multi-Tier Engine | Batch Reconciled | Mixed |
+| **Scenario 8** | `TXN008` | $1,299.99 | *(Aging Check)* | No settlements | Aging SLA Engine (>7d) | `PENDING` | `CRITICAL` 🔴 |
+
+---
+
+### Detailed Scenario Breakdown & Raw CSV Data
+
+#### 📁 Scenario 1: Exact 1-to-1 Match (`scenario_1.csv`)
+- **Business Logic**: Normal transaction settled in full by processor via matching `lifecycle_id`.
+- **Calculation**: $\$125.99 \text{ (Debit)} - \$0.00 = \$125.99 \equiv \text{Transaction Amount}$.
+- **Result**: `settlement_status = FULLY_SETTLED`, Severity: `CLEAR` 🟢.
+
+```csv
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET001,LC001,ACC123,Amazon.com,2025-08-14,2025-08-15,125.99,DEBIT,USD
+```
+
+---
+
+#### 📁 Scenario 2: Partial Under-Settlement (`scenario_2.csv`)
+- **Business Logic**: Transaction authorized for $\$45.30$, but processor only remitted $\$35.30$.
+- **Calculation**: $\$35.30 \text{ (Debit)} < \$45.30 \text{ (Expected)}$. Discrepancy: $-\$10.00$.
+- **Result**: `settlement_status = PARTIAL`, Severity: `WARNING` 🟡.
+
+```csv
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET003,LC003,ACC125,Shell Gas,2025-08-14,2025-08-15,35.30,DEBIT,USD
+```
+
+---
+
+#### 📁 Scenario 3: Legitimate Refund & Net Balance (`scenario_3.csv`)
+- **Business Logic**: Customer purchase for $\$899.99$ followed by a partial return of $\$20.00$.
+- **Calculation**:
+  $$\text{Net Settled} = \$899.99 \text{ (DEBIT)} - \$20.00 \text{ (CREDIT)} = \$879.99$$
+- **Result**: `settlement_status = REFUNDED`, Severity: `CLEAR` 🟢 (Legitimate return, not flagged as discrepancy).
+
+```csv
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET004,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,899.99,DEBIT,USD
+SET005,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,20.00,CREDIT,USD
+```
+
+---
+
+#### 📁 Scenario 4: Critical Over-Settlement Discrepancy (`scenario_4.csv`)
+- **Business Logic**: Transaction authorized for $\$156.78$, but processor deposited $\$180.78$.
+- **Calculation**: $\$180.78 \text{ (Debit)} > \$156.78 \text{ (Txn Amount)}$. Excess: $+\$24.00$.
+- **Result**: `settlement_status = OVER_SETTLED`, Severity: `CRITICAL` 🔴. Generates an exception dossier entry in `/exceptions`.
+
+```csv
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET009,LC007,ACC129,Walmart,2025-08-14,2025-08-15,180.78,DEBIT,USD
+```
+
+---
+
+#### 📁 Scenario 5: Missing Lifecycle ID / Composite Fallback Matching (`scenario_5.csv`)
+- **Business Logic**: Acquirer settlement file has an empty `lifecycle_id`. The engine falls back to matching composite key: `account_id` (`ACC135`) + `merchant_name` (`Corner Deli`) + `transaction_date` (`2025-08-14`).
+- **Result**: Successfully resolved to `TXN013`, `settlement_status = FULLY_SETTLED`, Match Method: `FALLBACK_COMPOSITE`.
+
+```csv
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET014,,ACC135,Corner Deli,2025-08-14,2025-08-15,32.45,DEBIT,USD
+```
+
+---
+
+#### 📁 Scenario 6: Multi-Tranche Progressive Settlement (`scenario_6.csv`)
+- **Business Logic**: Large transaction ($234.50) settled in two separate tranches.
+  - Tranche 1 (`SET006`): $\$150.00 \text{ DEBIT} \rightarrow$ State becomes `PARTIAL`.
+  - Tranche 2 (`SET007`): $\$84.50 \text{ DEBIT} \rightarrow$ Total equals $\$234.50 \rightarrow$ Transitions to `FULLY_SETTLED`.
+- **Files Included**: Both tranches in `scenario_6.csv`, or step-by-step in `scenario_6_part1.csv` and `scenario_6_part2.csv`.
+
+```csv
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET006,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,150.00,DEBIT,USD
+SET007,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,84.50,DEBIT,USD
+```
+
+---
+
+#### 📁 Scenario 7: Multi-Event Settlement with Partial Credit (`scenario_7.csv`)
+- **Business Logic**: Transaction authorized for $\$87.25$. Processor deposits $\$87.25$ and subsequently issues a $\$12.25$ partial return credit.
+- **Calculation**: $\$87.25 \text{ (DEBIT)} - \$12.25 \text{ (CREDIT)} = \$75.00$. Net settled is under transaction total.
+- **Result**: `settlement_status = PARTIAL`, Severity: `WARNING` 🟡.
+
+```csv
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET008,LC006,ACC128,Target,2025-08-14,2025-08-15,87.25,DEBIT,USD
+SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
+```
+
+---
+
+#### 📁 Master Ingestion File: All Scenarios 1 to 7 (`all_scenarios_1_to_7.csv`)
+Ingests the entire suite of settlement records in a single run:
+
+```csv
+settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET001,LC001,ACC123,Amazon.com,2025-08-14,2025-08-15,125.99,DEBIT,USD
+SET003,LC003,ACC125,Shell Gas,2025-08-14,2025-08-15,35.30,DEBIT,USD
+SET004,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,899.99,DEBIT,USD
+SET005,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,20.00,CREDIT,USD
+SET009,LC007,ACC129,Walmart,2025-08-14,2025-08-15,180.78,DEBIT,USD
+SET014,,ACC135,Corner Deli,2025-08-14,2025-08-15,32.45,DEBIT,USD
+SET006,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,150.00,DEBIT,USD
+SET007,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,84.50,DEBIT,USD
+SET008,LC006,ACC128,Target,2025-08-14,2025-08-15,87.25,DEBIT,USD
+SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
+```
+
+---
+
+#### 📁 Scenario 8: Overdue Aged Settlement Detection (>7 Days SLA)
+- **Business Logic**: Transactions authorized $>7$ calendar days prior with $\$0$ settlement are flagged as critical operational overdue risks.
+- **Demonstration**: Seeded transactions `TXN008` (Apple, authorized `2025-08-05`, $\$1,299.99$) and `TXN010` (Netflix, authorized `2025-08-07`, $\$15.99$).
+- **Result**: When evaluated against default date `2025-08-15`, elapsed days exceed 7 days $\rightarrow$ Severity: `CRITICAL` 🔴 (`SETTLEMENT_OVERDUE_CRITICAL`).
+
+---
+
+#### 📁 Scenarios 9–13: Integrity & Error Boundary Protection
+
+- **Scenario 9 (Duplicate Idempotency)**: Re-uploading an identical CSV skips previously imported `settlement_id` values with zero double-counting.
+- **Scenario 10 (Conflicting Duplicate Quarantine)**: If an incoming settlement shares an ID with an existing record but contains differing financial amounts, it is rejected and quarantined in `reconciliation_run_items`.
+- **Scenario 11 (Ambiguous Match Protection)**: If fallback composite keys match multiple candidate transactions, the engine safely flags the row as `AMBIGUOUS` rather than guessing.
+- **Scenario 12 (Currency Mismatch Quarantine)**: Settlements in mismatched currencies (e.g., EUR settlement against USD transaction) are rejected.
+- **Scenario 13 (Declined / Failed Txn Exclusion)**: Transactions with status `FAILED` (`TXN015`) or `DECLINED` (`TXN016`) are strictly barred from receiving settlement funds.
+
+---
+
+## ✨ Core Platform Features & Enhancements
+
+### 1. Interactive 3-Stage CSV Upload Wizard
+- **Stage 1 (Select & Configure)**: Drag-and-drop CSV, paste raw text, or select any pre-configured assignment scenario.
+- **Stage 2 (Validation Preview & Dry Run)**: Previews records, executes Zod schema validation, and identifies matched transactions with **zero database mutation**.
+- **Stage 3 (Execution Report & Audit Ingestion)**: Commits the atomic batch, summarizes newly inserted, duplicates skipped, and invalid rows, and provides a direct button to **Download Rejected Records CSV**.
+
+### 2. Exception Management Desk (`/exceptions`)
+- Comprehensive discrepancy triage workspace.
+- **Interactive Review Workflow**: Analysts can transition issues from `UNREVIEWED` $\rightarrow$ `UNDER_REVIEW` $\rightarrow$ `RESOLVED`.
+- **Audit Logging**: Persists investigator identity (`reviewed_by`), markdown investigation notes, and timestamps to SQLite.
+
+### 3. Transaction Lifecycle Dossier & Visual Timeline (`/transactions/:id`)
+- Visual chronological timeline of every lifecycle event.
+- Running net balance computation on each tranche.
+- Explainable diagnosis banner with the exact mathematical formula.
+
+### 4. Reconciliation Runs History (`/runs`)
+- Auditable history of all previous reconciliation attempts.
+- Run metrics card: duration in milliseconds, records read, matched, skipped duplicates, and duration.
+- Export rejected or unmatched rows as CSV directly from any historical run.
+
+### 5. Aging Bands & Operational Analytics
+- Dynamic aging breakdown:
+  - 🟢 **0–3 Days**: Active normal processing window.
+  - 🟡 **4–7 Days**: Maturing transactions nearing SLA.
+  - 🔴 **>7 Days**: Critical overdue settlement SLA breach.
+- Average days to full settlement, completion percentage, and excess settled amounts.
+
+### 6. Time-Travel Simulation (Evaluation Date)
+- Top navigation bar includes a dynamic **Evaluation Date** selector.
+- Allows financial auditors to observe ledger states and aging bands as of any historical or future date.
+
+### 7. Instant Seed State Reset
+- One-click **Reset Database** button in the header and settings page.
+- Cleans and re-populates the exact baseline seeded data and migrations within 50ms.
+
+---
+
+## 🎨 Design System & UI Color Scheme
+
+The user interface follows the **OpenFabric Modern Financial Palette**, built with Tailwind CSS, custom glassmorphism, and WCAG AAA compliance:
+
+| Color Role | Hex Code | Visual Preview | Application |
+| :--- | :--- | :--- | :--- |
+| **Obsidian Dark** | `#0F1B4C` | ![#0F1B4C](https://placehold.co/15x15/0F1B4C/0F1B4C.png) | Sidebar background, primary brand headers, prominent buttons |
+| **Tech Cyan** | `#1EC8A5` | ![#1EC8A5](https://placehold.co/15x15/1EC8A5/1EC8A5.png) | Accent badges, logo endpoints, active indicators, success metrics |
+| **Alabaster Canvas** | `#F8FAFC` | ![#F8FAFC](https://placehold.co/15x15/F8FAFC/F8FAFC.png) | Glare-free page background, dashboard workspace surface |
+| **Card Surface** | `#FFFFFF` | ![#FFFFFF](https://placehold.co/15x15/FFFFFF/FFFFFF.png) | Clean elevated container surfaces, data tables, modal dialogs |
+| **Critical Rose** | `#E11D48` | ![#E11D48](https://placehold.co/15x15/E11D48/E11D48.png) | Over-settlement alerts, overdue SLA warnings, critical issues |
+| **Warning Amber** | `#D97706` | ![#D97706](https://placehold.co/15x15/D97706/D97706.png) | Partial under-settlement badges, approaching SLA thresholds |
+| **Settled Emerald**| `#059669` | ![#059669](https://placehold.co/15x15/059669/059669.png) | Fully settled transactions, clean reconciliations, matched states |
+| **Refund Violet** | `#7C3AED` | ![#7C3AED](https://placehold.co/15x15/7C3AED/7C3AED.png) | Legitimate return credits, reversal transactions, credit events |
+
+---
+
+## 📡 REST API Documentation
+
+### 🔑 Authentication Endpoints
+| Method | Route | Description | Auth Required |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/login` | Authenticates auditor credentials and issues signed JWT | No |
+| `GET` | `/auth/me` | Validates active session and retrieves user profile | Yes (`Bearer`) |
+
+### ⚡ Reconciliation Endpoints
+| Method | Route | Description | Payload |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/reconcile` | Ingests CSV file/text, matches settlements, records run | Multipart / JSON |
+| `POST` | `/reconcile/preview` | Validates schema & matches with zero database changes | Multipart / JSON |
+| `POST` | `/reconcile/reset` | Resets SQLite database to clean seeded initial state | None |
+
+### 📜 Reconciliation Run History
+| Method | Route | Description |
+| :--- | :--- | :--- |
+| `GET` | `/reconciliation-runs` | Returns paginated list of all previous reconciliation runs |
+| `GET` | `/reconciliation-runs/:id` | Returns run details and itemized audit events |
+| `DELETE`| `/reconciliation-runs/:id` | Removes run record and associated run items |
+| `GET` | `/reconciliation-runs/:id/export-rejected` | Downloads CSV of all rejected or unmatched records |
+
+### 💳 Transactions & Settlements
+| Method | Route | Description | Filters |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/transactions` | List all internal transactions | `status`, `severity`, `search`, `evaluationDate` |
+| `GET` | `/transactions/export` | Download filtered transactions as CSV | Same as above |
+| `POST` | `/transactions` | Create a single internal transaction | JSON transaction payload |
+| `POST` | `/transactions/bulk` | Bulk import internal transactions | Array of transaction objects |
+| `GET` | `/transactions/:id` | Detailed dossier, timeline, settlements & formulas | `evaluationDate` |
+| `PUT` | `/transactions/:id` | Update transaction metadata | JSON updates |
+| `DELETE`| `/transactions/:id` | Delete transaction record | None |
+| `GET` | `/transactions/:id/export-settlements` | Download settlement history for specific transaction | None |
+| `GET` | `/settlements` | Direct list of all settlement records | `runId` |
+
+### ⚠️ Exceptions & Analytics
+| Method | Route | Description |
+| :--- | :--- | :--- |
+| `GET` | `/exceptions` | List financial exceptions with triage filters |
+| `GET` | `/exceptions/:id` | Exception detail with formula and linked transaction |
+| `PATCH`| `/exceptions/:id/review` | Update review status (`UNREVIEWED`, `UNDER_REVIEW`, `RESOLVED`) & notes |
+| `GET` | `/exceptions/export` | Download filtered exceptions report as CSV |
+| `GET` | `/dashboard/summary` | Real-time KPI totals, status breakdowns, and aging bands |
+| `GET` | `/health` | Health check endpoint |
+
+---
+
+## 🗄️ Database Schema & Entity Relationship
+
+The database runs on **SQLite** with strict foreign key constraints enabled (`PRAGMA foreign_keys = ON;`).
+
+```sql
+-- 1. Internal authorized transactions
+CREATE TABLE transactions (
+  transaction_id VARCHAR(50) PRIMARY KEY,
+  lifecycle_id VARCHAR(50),
+  account_id VARCHAR(50) NOT NULL,
+  merchant_name VARCHAR(100) NOT NULL,
+  transaction_date DATE NOT NULL,
+  transaction_amount DECIMAL(10,2) NOT NULL,
+  currency VARCHAR(3) NOT NULL,
+  status VARCHAR(20) NOT NULL,
+  settlement_status VARCHAR(20) DEFAULT 'PENDING',
+  total_settled_amount DECIMAL(10,2) DEFAULT 0.00,
+  last_settlement_date DATE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Processor settlement ledger
+CREATE TABLE settlement_history (
+  settlement_id VARCHAR(50) PRIMARY KEY,
+  transaction_id VARCHAR(50) REFERENCES transactions(transaction_id),
+  lifecycle_id VARCHAR(50),
+  settlement_date DATE NOT NULL,
+  settlement_amount DECIMAL(10,2) NOT NULL,
+  settlement_type VARCHAR(10) NOT NULL, -- 'DEBIT' or 'CREDIT'
+  currency VARCHAR(3) NOT NULL,
+  run_id VARCHAR(50) REFERENCES reconciliation_runs(run_id),
+  match_method VARCHAR(30), -- 'PRIMARY_LIFECYCLE' or 'FALLBACK_COMPOSITE'
+  processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Ingestion batch runs
+CREATE TABLE reconciliation_runs (
+  run_id VARCHAR(50) PRIMARY KEY,
+  file_name VARCHAR(255) NOT NULL,
+  file_size_bytes INTEGER DEFAULT 0,
+  status VARCHAR(20) NOT NULL, -- 'COMPLETED', 'PARTIAL', 'FAILED'
+  records_read INTEGER,
+  matched_records INTEGER,
+  new_settlements_inserted INTEGER,
+  duplicates_skipped INTEGER,
+  invalid_records INTEGER,
+  unmatched_records INTEGER,
+  transactions_updated INTEGER,
+  duration_ms INTEGER,
+  error_message TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4. Itemized run event audit log
+CREATE TABLE reconciliation_run_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id VARCHAR(50) REFERENCES reconciliation_runs(run_id),
+  row_number INTEGER,
+  settlement_id VARCHAR(50),
+  item_type VARCHAR(20), -- 'MATCHED', 'SKIPPED_DUPLICATE', 'INVALID', 'UNMATCHED', 'AMBIGUOUS'
+  reason TEXT,
+  raw_data TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. Exception reviews and investigator audit
+CREATE TABLE exception_reviews (
+  exception_id VARCHAR(100) PRIMARY KEY,
+  transaction_id VARCHAR(50),
+  issue_code VARCHAR(50) NOT NULL,
+  severity VARCHAR(20) NOT NULL,
+  review_status VARCHAR(20) DEFAULT 'UNREVIEWED', -- 'UNREVIEWED', 'UNDER_REVIEW', 'RESOLVED'
+  notes TEXT,
+  reviewed_by VARCHAR(50) DEFAULT 'Lead Financial Auditor',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 6. User accounts
+CREATE TABLE users (
+  id VARCHAR(50) PRIMARY KEY,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  role VARCHAR(50) DEFAULT 'admin',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 🧪 Automated Testing Suite
+
+The project includes unit and integration tests written in **Vitest** and **Supertest** covering all reconciliation algorithms, API endpoints, and edge cases.
+
+### Running Tests Locally
 
 ```bash
 cd backend
 npm test
 ```
 
-### Test Highlights:
-- **Scenario 1**: Perfect Match ($100 DEBIT vs $100 Txn) $\rightarrow$ `FULLY_SETTLED`, Clean.
-- **Scenario 2**: Partial Settlement ($80 DEBIT vs $100 Txn) $\rightarrow$ `PARTIAL`, Warning Flag.
-- **Scenario 3**: Legitimate Refund ($100 DEBIT + $20 CREDIT vs $100 Txn) $\rightarrow$ `REFUNDED`, Clean.
-- **Scenario 4**: Over-settlement ($120 DEBIT vs $100 Txn) $\rightarrow$ `OVER_SETTLED`, 🔴 Critical Issue.
-- **Scenario 5**: Fallback composite key matching when `lifecycle_id` is null.
-- **Scenario 6**: Multi-tranche progression ($50 DEBIT $\rightarrow$ `PARTIAL`, second $50 DEBIT $\rightarrow$ `FULLY_SETTLED`).
-- **Scenario 7**: Complex refund credit calculation.
-- **Scenario 8**: Overdue aged settlement (>7 days elapsed from transaction date).
-- **Scenario 9**: Duplicate Import Idempotency (repeated CSV upload skips existing records without doubling totals).
-- **Scenario 10**: Conflicting duplicate detection (same settlement ID with different data rejected).
-- **Scenario 11**: Ambiguous match protection (multiple candidates flagged without guessing).
-- **Scenario 12**: Currency mismatch quarantine.
-- **Scenario 13**: Failed/Declined transaction exclusion.
-- **Scenario 14**: Pre-import CSV preview without touching SQLite database.
-- **Scenario 15**: Reconciliation run audit tracking and rejected records export.
-- **Scenario 16**: Exception review workflow and investigation notes persistence in SQLite.
-- **Scenario 17**: Operational aging bands (0-3d, 4-7d, >7d).
-- **Scenario 18-34**: Comprehensive REST API endpoints and error boundary tests.
+### Coverage Scope:
+- ✅ **Deterministic Matching**: Validates primary `lifecycle_id` match and composite fallback resolution.
+- ✅ **Integer Arithmetic**: Verifies zero decimal precision errors on multi-tranche debits and refund credits.
+- ✅ **State Transitions**: Validates `PENDING` $\rightarrow$ `PARTIAL` $\rightarrow$ `FULLY_SETTLED` $\rightarrow$ `REFUNDED` $\rightarrow$ `OVER_SETTLED`.
+- ✅ **Idempotency**: Proves identical CSV uploads skip duplicates with zero total balance increase.
+- ✅ **Conflicting Duplicate Isolation**: Ensures mismatched duplicates are blocked and logged.
+- ✅ **Aging SLA Calculation**: Confirms transactions $>7$ days without settlement transition to critical overdue status.
+- ✅ **Zero-Mutation Preview**: Proves `/reconcile/preview` does not mutate database tables.
+- ✅ **Exception Persistence**: Tests notes updates and review status transitions in SQLite.
 
 ---
 
-## 📡 REST API Reference
+## 🚀 Local Development & Quick Start
 
-### Core Reconciliation Endpoints
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/reconcile` | Ingests CSV file/text, reconciles ledger, records run audit |
-| `POST` | `/reconcile/preview` | Validates and previews CSV without database mutations |
-| `POST` | `/reconcile/reset` | Resets SQLite database to clean seeded initial state |
+### Prerequisites
+- **Node.js**: v20+
+- **npm**: v10+
 
-### Reconciliation Runs & Audit History
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/reconciliation-runs` | Returns paginated list of all previous reconciliation runs |
-| `GET` | `/reconciliation-runs/:id` | Returns run details and itemized audit events |
-| `GET` | `/reconciliation-runs/:id/export-rejected` | Downloads CSV of rejected/unmatched records |
+### 1. Clone & Setup Backend
 
-### Transactions & Settlements
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/transactions` | List transactions with filters (`status`, `severity`, `search`, `evaluationDate`) |
-| `GET` | `/transactions/export` | Downloads active filtered transactions as CSV |
-| `GET` | `/transactions/:id` | Detailed transaction dossier with timeline, settlements, and formulas |
-| `GET` | `/transactions/:id/export-settlements` | Downloads settlement history for specific transaction as CSV |
-| `GET` | `/settlements` | Direct list of all settlement records |
+```bash
+cd backend
 
-### Exception Management Center
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/exceptions` | List financial exceptions with triage filters |
-| `GET` | `/exceptions/:id` | Exception detail with formula, linked transaction, and diagnosis |
-| `PATCH` | `/exceptions/:id/review` | Updates review status (`UNREVIEWED`, `UNDER_REVIEW`, `RESOLVED`) and notes |
-| `GET` | `/exceptions/export` | Downloads filtered exceptions report as CSV |
+# Install dependencies
+npm install
 
-### Analytics & Dashboard
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/dashboard/summary` | Real-time KPI totals, status breakdowns, and aging bands |
-| `GET` | `/health` | Health check endpoint |
+# Build TypeScript
+npm run build
 
----
+# Start backend server
+npm start
+# Server runs on http://localhost:4000
+```
 
-## 🗄️ Database Schema
+### 2. Setup Frontend
 
-### `transactions`
-- `transaction_id`: VARCHAR(50) PRIMARY KEY
-- `lifecycle_id`: VARCHAR(50)
-- `account_id`: VARCHAR(50) NOT NULL
-- `merchant_name`: VARCHAR(100) NOT NULL
-- `transaction_date`: DATE NOT NULL
-- `transaction_amount`: DECIMAL(10,2) NOT NULL
-- `currency`: VARCHAR(3) NOT NULL
-- `status`: VARCHAR(20) NOT NULL
-- `settlement_status`: VARCHAR(20) DEFAULT 'PENDING'
-- `total_settled_amount`: DECIMAL(10,2) DEFAULT 0.00
-- `last_settlement_date`: DATE
-- `created_at`: TIMESTAMP
+In a separate terminal window:
 
-### `settlement_history`
-- `settlement_id`: VARCHAR(50) PRIMARY KEY
-- `transaction_id`: VARCHAR(50) REFERENCES transactions(transaction_id)
-- `lifecycle_id`: VARCHAR(50)
-- `settlement_date`: DATE NOT NULL
-- `settlement_amount`: DECIMAL(10,2) NOT NULL
-- `settlement_type`: VARCHAR(10) NOT NULL ('DEBIT' or 'CREDIT')
-- `currency`: VARCHAR(3) NOT NULL
-- `run_id`: VARCHAR(50) REFERENCES reconciliation_runs(run_id)
-- `match_method`: VARCHAR(30) ('PRIMARY_LIFECYCLE' or 'FALLBACK_COMPOSITE')
-- `processed_at`: TIMESTAMP
+```bash
+cd frontend
 
-### `reconciliation_runs`
-- `run_id`: VARCHAR(50) PRIMARY KEY
-- `file_name`: VARCHAR(255) NOT NULL
-- `file_size_bytes`: INTEGER DEFAULT 0
-- `status`: VARCHAR(20) NOT NULL ('COMPLETED', 'PARTIAL', 'FAILED')
-- `records_read`: INTEGER
-- `matched_records`: INTEGER
-- `new_settlements_inserted`: INTEGER
-- `duplicates_skipped`: INTEGER
-- `invalid_records`: INTEGER
-- `unmatched_records`: INTEGER
-- `transactions_updated`: INTEGER
-- `duration_ms`: INTEGER
-- `error_message`: TEXT
-- `created_at`: TIMESTAMP
+# Install dependencies
+npm install
 
-### `reconciliation_run_items`
-- `id`: INTEGER PRIMARY KEY AUTOINCREMENT
-- `run_id`: VARCHAR(50) REFERENCES reconciliation_runs(run_id)
-- `row_number`: INTEGER
-- `settlement_id`: VARCHAR(50)
-- `item_type`: VARCHAR(20) ('MATCHED', 'SKIPPED_DUPLICATE', 'INVALID', 'CONFLICT', 'UNMATCHED', 'AMBIGUOUS')
-- `reason`: TEXT
-- `raw_data`: TEXT
-- `created_at`: TIMESTAMP
+# Start Vite development server
+npm run dev
+# Dashboard opens on http://localhost:3000
+```
 
-### `exception_reviews`
-- `exception_id`: VARCHAR(100) PRIMARY KEY
-- `transaction_id`: VARCHAR(50)
-- `issue_code`: VARCHAR(50) NOT NULL
-- `severity`: VARCHAR(20) NOT NULL
-- `review_status`: VARCHAR(20) ('UNREVIEWED', 'UNDER_REVIEW', 'RESOLVED')
-- `notes`: TEXT
-- `reviewed_by`: VARCHAR(50)
-- `updated_at`: TIMESTAMP
-- `created_at`: TIMESTAMP
+### 3. Log In to Dashboard
+
+1. Navigate to `http://localhost:3000` (redirects to `/login`).
+2. Input credentials:
+   - Email: `admin@openfabric.co`
+   - Password: `admin123`
+3. Click **Sign In** to access the live reconciliation console.
 
 ---
 
-## 🎬 End-to-End Demo Flow
+## 🌐 Deployment & Environment Configuration
 
-1. **Dashboard Overview**:
-   - View top KPI cards, including **CSV Uploads Count** indicator.
-   - Inspect the **Reconciliation Upload Batches** table.
-   - Click on any upload row to open the **Run Metrics Dossier Modal** showing exact metrics for that upload.
-2. **Pre-Import CSV Validation**:
-   - Click **"Reconcile New Data"** in header or dashboard.
-   - Choose the provided dataset, upload a file, or paste CSV records.
-   - Click **"Validate & Preview CSV"** to inspect row-by-row matching diagnostics before committing.
-   - Click **"Confirm & Commit Reconciliation"** to ingest.
-3. **Execution Report**:
-   - Review records inserted, duplicates skipped, and unmatched entries.
-   - Click **"Download Rejected CSV"** if discrepancies exist.
-4. **Exception Management**:
-   - Navigate to **"Exceptions"** in the sidebar.
-   - Filter by Critical / Warning or Review Status.
-   - Click **"Investigate"** on an exception to see the exact financial formula, linked transaction, and add investigation notes.
-   - Change review state to `UNDER_REVIEW` or `RESOLVED` and save.
-5. **Audit Run History**:
-   - Navigate to **"Upload History"** (`/runs`) to see every historical upload attempt with full statistics.
-6. **Transaction Dossier & Timeline**:
-   - Open any transaction to see its chronological lifecycle timeline, matching method, and export settlements CSV.
+### Backend Environment Variables (`backend/.env`)
+
+```ini
+PORT=4000
+DB_PATH=data/reconciliation.db
+EVALUATION_DATE=2025-08-15
+CORS_ORIGIN=*
+JWT_SECRET=openfabric_reconciliation_super_secure_jwt_secret_2026
+JWT_EXPIRY=24h
+```
+
+### Frontend Environment Variables (`frontend/.env`)
+
+```ini
+# Production Render backend URL (or http://localhost:4000 for local dev)
+VITE_API_URL=https://of-backend.onrender.com
+```
+
+### Vercel Deployment Configuration (`frontend/vercel.json`)
+
+To enable client-side routing on Vercel without 404 errors on browser refresh:
+
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
+```
+
+---
+
+<div align="center">
+  <p><strong>OpenFabric Financial Systems &copy; 2026. High-Precision Transaction Reconciliation Platform.</strong></p>
+  <p>Live Dashboard: <a href="https://of-frontend.vercel.app/">https://of-frontend.vercel.app/</a></p>
+</div>
