@@ -213,7 +213,7 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
         <AlertCircle className="w-10 h-10 text-[#E11D48] mx-auto mb-3" />
         <h3 className="text-lg font-bold text-slate-900">Error Connecting to Backend</h3>
         <p className="text-sm text-slate-500 mt-2">{error}</p>
-        <p className="text-xs text-slate-400 mt-4">Ensure the backend server is running on port 4000.</p>
+        <p className="text-xs text-slate-400 mt-4">Please verify that the backend API service is online and accessible.</p>
       </div>
     );
   }

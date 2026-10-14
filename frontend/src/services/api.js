@@ -1,5 +1,81 @@
-const rawApiBase = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-const API_BASE = rawApiBase.replace(/\/+$/, '');
+const rawApiBase = import.meta.env.VITE_API_URL || '';
+const API_BASE = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '';
+
+export function getAuthToken() {
+  return localStorage.getItem('of_auth_token');
+}
+
+export function setAuthToken(token) {
+  if (token) {
+    localStorage.setItem('of_auth_token', token);
+  } else {
+    localStorage.removeItem('of_auth_token');
+  }
+}
+
+export function clearAuthToken() {
+  localStorage.removeItem('of_auth_token');
+  localStorage.removeItem('of_auth_user');
+}
+
+export function getStoredUser() {
+  try {
+    const raw = localStorage.getItem('of_auth_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredUser(user) {
+  if (user) {
+    localStorage.setItem('of_auth_user', JSON.stringify(user));
+  } else {
+    localStorage.removeItem('of_auth_user');
+  }
+}
+
+export async function loginUser(email, password) {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || 'Authentication failed. Please verify credentials.');
+  }
+
+  if (data.token) {
+    setAuthToken(data.token);
+    setStoredUser(data.user);
+  }
+
+  return data;
+}
+
+export async function fetchCurrentUser() {
+  const token = getAuthToken();
+  if (!token) throw new Error('No authentication token found.');
+
+  const res = await fetch(`${API_BASE}/auth/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!res.ok) {
+    clearAuthToken();
+    throw new Error('Session expired or unauthorized');
+  }
+
+  const data = await res.json();
+  if (data.user) {
+    setStoredUser(data.user);
+  }
+  return data.user;
+}
 
 export async function fetchSummary(evaluationDate, runId) {
   const url = new URL(`${API_BASE}/dashboard/summary`);

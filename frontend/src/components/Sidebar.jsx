@@ -8,10 +8,13 @@ import {
   AlertTriangle,
   FileText,
   Settings,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export function Sidebar({ isOpen, onClose, onOpenReconcile }) {
+  const { user, logout } = useAuth();
   const navItems = [
     { name: 'Dashboard', path: '/', icon: BarChart3 },
     { name: 'Transactions', path: '/transactions', icon: ListFilter },
@@ -127,13 +130,33 @@ export function Sidebar({ isOpen, onClose, onOpenReconcile }) {
           </nav>
         </div>
 
-        {/* System Status / Engine Footnote */}
-        <div className="p-4 border-t border-white/[0.06] shrink-0">
-          <div className="flex items-center gap-2.5 text-xs font-mono text-[#9EA5C7] bg-white/[0.04] p-2.5 rounded-xl border border-white/[0.06]">
+        {/* Auditor Profile & Logout Action */}
+        <div className="p-3.5 border-t border-white/[0.06] shrink-0 space-y-2">
+          {user && (
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#1EC8A5]"></span>
+                  <span className="text-xs font-bold text-white truncate block">{user.name || 'Auditor'}</span>
+                </div>
+                <span className="text-[10px] font-mono text-[#1EC8A5] truncate block uppercase">{user.role || 'Admin'} • {user.email}</span>
+              </div>
+              <button
+                type="button"
+                onClick={logout}
+                title="Log out of session"
+                className="p-1.5 text-[#9EA5C7] hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors ml-1 shrink-0"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* SQLite Node Indicator */}
+          <div className="flex items-center gap-2.5 text-xs font-mono text-[#9EA5C7] bg-black/20 p-2 rounded-lg border border-white/[0.04]">
             <div className="status-dot-live shrink-0"></div>
-            <div className="truncate">
-              <span className="text-white block font-semibold text-[11px]">SQLite Ledger Node</span>
-              <span className="text-[10px] text-[#5B6487]">Card-rail engine v1.2</span>
+            <div className="truncate text-[10px]">
+              <span className="text-[#9EA5C7]">Active</span>
             </div>
           </div>
         </div>
