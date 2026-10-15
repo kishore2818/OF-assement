@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Copy,
   RefreshCw,
+  Sparkles,
   ArrowRight,
   Download,
   AlertCircle,
@@ -17,12 +18,33 @@ import {
 } from 'lucide-react';
 import { previewReconciliation, runReconciliation, getRejectedItemsExportUrl } from '../services/api';
 
+const DEFAULT_CSV_SAMPLE = `settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
+SET001,LC001,ACC123,Amazon.com,2025-08-14,2025-08-15,125.99,DEBIT,USD
+SET002,LC002,ACC124,Starbucks,2025-08-14,2025-08-15,4.75,DEBIT,USD
+SET003,LC003,ACC125,Shell Gas,2025-08-14,2025-08-15,35.30,DEBIT,USD
+SET004,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,899.99,DEBIT,USD
+SET005,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,20.00,CREDIT,USD
+SET006,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,150.00,DEBIT,USD
+SET007,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,84.50,DEBIT,USD
+SET008,LC006,ACC128,Target,2025-08-14,2025-08-15,87.25,DEBIT,USD
+SET009,LC007,ACC129,Walmart,2025-08-14,2025-08-15,180.78,DEBIT,USD
+SET010,LC008,ACC130,Apple,2025-08-05,2025-08-06,1299.99,DEBIT,USD
+SET011,LC008,ACC130,Apple,2025-08-05,2025-08-08,299.99,CREDIT,USD
+SET012,LC009,ACC131,Nike,2025-08-14,2025-08-15,189.95,DEBIT,USD
+SET014,,ACC135,Corner Deli,2025-08-14,2025-08-15,32.45,DEBIT,USD
+SET015,,ACC136,Shell Gas,2025-08-14,2025-08-15,28.90,DEBIT,USD
+SET016,LC999,ACC199,Disney Plus,2025-08-14,2025-08-15,99.99,DEBIT,USD
+SET017,,ACC137,Amazon.com,2025-08-14,2025-08-15,199.99,DEBIT,USD
+SET018,,ACC777,Uber Taxi,2025-08-10,2025-08-11,25.75,DEBIT,USD
+SET019,LC002,ACC124,Starbucks,2025-08-14,2025-08-15,1.50,CREDIT,USD
+SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD`;
+
 export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
   // Wizard Stages: 'INPUT' -> 'PREVIEW' -> 'RESULT'
   const [stage, setStage] = useState('INPUT');
   const [selectedFile, setSelectedFile] = useState(null);
   const [csvText, setCsvText] = useState('');
-  const [inputMode, setInputMode] = useState('file');
+  const [inputMode, setInputMode] = useState('preset');
 
   // Preview & Processing state
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -37,7 +59,7 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
     setStage('INPUT');
     setSelectedFile(null);
     setCsvText('');
-    setInputMode('file');
+    setInputMode('preset');
     setPreviewData(null);
     setResult(null);
     setErrorMsg(null);
@@ -62,10 +84,13 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
       if (!selectedFile) throw new Error('Please select a CSV file first.');
       payload = selectedFile;
       fileName = selectedFile.name;
-    } else {
+    } else if (inputMode === 'paste') {
       if (!csvText.trim()) throw new Error('Please paste CSV contents.');
       payload = csvText;
       fileName = 'pasted_settlements.csv';
+    } else {
+      payload = DEFAULT_CSV_SAMPLE;
+      fileName = 'exercise_dataset_19_rows.csv';
     }
     return { payload, fileName };
   }
@@ -120,24 +145,39 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-50 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#E6FAF5] text-[#1EC8A5] border border-[#B3F0E1]">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 rounded-xl bg-[#E6FAF5] text-[#1EC8A5] border border-[#B3F0E1] shrink-0">
               <UploadCloud className="w-5 h-5 stroke-[2.2]" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm sm:text-base font-bold text-slate-900">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <h3 className="text-xs sm:text-base font-bold text-slate-900 truncate">
                   {stage === 'INPUT' && 'Ingest & Reconcile Settlement CSV'}
                   {stage === 'PREVIEW' && 'Pre-Import Validation & Schema Preview'}
                   {stage === 'RESULT' && 'Reconciliation Execution Report'}
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1EC8A5]/10 text-[#1EC8A5] border border-[#1EC8A5]/20 font-mono">
-                  {stage === 'INPUT' && 'Step 1 of 3'}
-                  {stage === 'PREVIEW' && 'Step 2 of 3'}
-                  {stage === 'RESULT' && 'Step 3 of 3 (Complete)'}
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1EC8A5]/10 text-[#1EC8A5] border border-[#1EC8A5]/20 font-mono whitespace-nowrap shrink-0">
+                  {stage === 'INPUT' && (
+                    <>
+                      <span className="sm:hidden">1 of 3</span>
+                      <span className="hidden sm:inline">Step 1 of 3</span>
+                    </>
+                  )}
+                  {stage === 'PREVIEW' && (
+                    <>
+                      <span className="sm:hidden">2 of 3</span>
+                      <span className="hidden sm:inline">Step 2 of 3</span>
+                    </>
+                  )}
+                  {stage === 'RESULT' && (
+                    <>
+                      <span className="sm:hidden">3 of 3</span>
+                      <span className="hidden sm:inline">Step 3 of 3 (Complete)</span>
+                    </>
+                  )}
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-sans">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-sans truncate sm:whitespace-normal">
                 {stage === 'INPUT' && 'Select sample dataset, upload CSV file, or paste raw batch records'}
                 {stage === 'PREVIEW' && 'Verify matching diagnostics, warnings, and duplicates before committing'}
                 {stage === 'RESULT' && 'Audit summary of inserted settlements and updated ledger accounts'}
@@ -147,14 +187,15 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
 
           <button
             onClick={handleClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-colors"
+            aria-label="Close dialog"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-colors shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 font-sans">
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 font-sans">
           {/* Error Banner */}
           {errorMsg && (
             <div className="p-3.5 rounded-xl bg-[#FFF1F2] border border-[#FECDD3] text-[#E11D48] text-xs flex items-center gap-2">
@@ -166,27 +207,61 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
           {/* ──────────────── STAGE 1: INPUT ──────────────── */}
           {stage === 'INPUT' && (
             <div className="space-y-4">
-              {/* Mode Switcher */}
-              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold gap-1">
+              {/* Mode Switcher: Responsive Flexbox on Mobile & Desktop */}
+              <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold gap-1 shadow-2xs">
                 <button
-                  onClick={() => setInputMode('file')}
-                  className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                    inputMode === 'file' ? 'bg-white text-[#1EC8A5] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  onClick={() => setInputMode('preset')}
+                  className={`flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-[11px] sm:text-xs ${
+                    inputMode === 'preset'
+                      ? 'bg-white text-[#1EC8A5] font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 font-medium'
                   }`}
                 >
-                  <FileText className="w-3.5 h-3.5" />
-                  Upload CSV File
+                  <Sparkles className="w-3.5 h-3.5 text-[#1EC8A5] shrink-0" />
+                  <span className="sm:hidden">Sample</span>
+                  <span className="hidden sm:inline">Authoritative Sample (19 Rows)</span>
+                </button>
+                <button
+                  onClick={() => setInputMode('file')}
+                  className={`flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-[11px] sm:text-xs ${
+                    inputMode === 'file'
+                      ? 'bg-white text-[#1EC8A5] font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 font-medium'
+                  }`}
+                >
+                  <UploadCloud className="w-3.5 h-3.5 shrink-0" />
+                  <span className="sm:hidden">Upload</span>
+                  <span className="hidden sm:inline">Upload CSV File</span>
                 </button>
                 <button
                   onClick={() => setInputMode('paste')}
-                  className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                    inputMode === 'paste' ? 'bg-white text-[#1EC8A5] shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  className={`flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-[11px] sm:text-xs ${
+                    inputMode === 'paste'
+                      ? 'bg-white text-[#1EC8A5] font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 font-medium'
                   }`}
                 >
-                  <Copy className="w-3.5 h-3.5" />
-                  Paste CSV Text
+                  <Copy className="w-3.5 h-3.5 shrink-0" />
+                  <span className="sm:hidden">Paste</span>
+                  <span className="hidden sm:inline">Paste CSV Text</span>
                 </button>
               </div>
+
+              {/* Preset Description */}
+              {inputMode === 'preset' && (
+                <div className="rounded-xl border border-[#A7F3D0] bg-[#ECFDF5] p-3.5 sm:p-4 flex items-start gap-2.5 sm:gap-3">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#059669] shrink-0 mt-0.5" />
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xs sm:text-sm font-semibold text-[#065F46]">Exercise Provided Dataset</h4>
+                      <span className="px-1.5 py-0.5 rounded-md bg-[#A7F3D0]/60 text-[#065F46] text-[10px] font-mono font-bold">19 Rows</span>
+                    </div>
+                    <p className="text-[11px] sm:text-xs text-[#047857] leading-relaxed">
+                      Pre-packaged sample dataset covering all core scenarios: primary lifecycle matches, fallback composite keys (Corner Deli, Shell Gas), multi-tranche partials, refunds (Apple), over-settlement (Walmart), and quarantined records.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* File Upload Zone */}
               {inputMode === 'file' && (
