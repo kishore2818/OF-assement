@@ -6,6 +6,7 @@
   <strong>A high-accuracy, production-grade financial settlement reconciliation engine with explainable discrepancy triage, deterministic multi-tier matching, immutable audit trails, and enterprise JWT security.</strong>
 </p>
 
+[![GitHub Repository](https://img.shields.io/badge/GitHub-OF--assement-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/kishore2818/OF-assement)
 [![Live Demo](https://img.shields.io/badge/🌐%20Live%20App-of--frontend.vercel.app-1EC8A5?style=for-the-badge&logo=vercel&logoColor=white)](https://of-frontend.vercel.app/)
 [![Backend API](https://img.shields.io/badge/⚡%20Backend%20API-Render%20Online-0F1B4C?style=for-the-badge&logo=render&logoColor=white)](https://of-backend.onrender.com)
 [![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
@@ -493,5 +494,5 @@ To enable client-side routing on Vercel without 404 errors on browser refresh:
 
 <div align="center">
   <p><strong>OpenFabric Financial Systems &copy; 2026. High-Precision Transaction Reconciliation Platform.</strong></p>
-  <p>Live Dashboard: <a href="https://of-frontend.vercel.app/">https://of-frontend.vercel.app/</a></p>
+  <p>Live Dashboard: <a href="https://of-frontend.vercel.app/">https://of-frontend.vercel.app/</a> &bull; Repository: <a href="https://github.com/kishore2818/OF-assement">https://github.com/kishore2818/OF-assement</a></p>
 </div>
