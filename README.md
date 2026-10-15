@@ -353,6 +353,16 @@ SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
 - One-click **Reset Database** button in the header and settings page.
 - Cleans and re-populates the exact baseline seeded data and migrations within 50ms.
 
+### 8. Auditor Reports Desk & Dual-Format Export Engine (`/reports`)
+The platform features an automated reporting center enabling financial auditors and stakeholders to generate compliance-grade reports in both **PDF** and **CSV** formats:
+- **Executive Reconciliation Audit Report (PDF)**:
+  - Generates client-side via `jspdf` and `jspdf-autotable` with custom styling.
+  - Includes OpenFabric brand banner, evaluation date metadata, executive KPI cards, status and issue triage distribution, aging bands, running variance calculation, itemized transaction audit tables, and algorithmic verification sign-off.
+- **Comprehensive CSV Ledger Exports**:
+  - **Settlement Records CSV**: Ingested processor settlements with lifecycle IDs, account numbers, and net settlement amounts.
+  - **Transactions Ledger CSV**: Complete export of all transactions with real-time settlement status, outstanding balances, and issue severity flags (`GET /transactions/export`).
+  - **Quarantined & Rejected Records CSV**: Immediate download of invalid, conflicting duplicate, or currency-mismatched records for external auditing.
+
 ---
 
 ## 📡 REST API Documentation

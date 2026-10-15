@@ -42,6 +42,10 @@ All individual scenario datasets are available in the [Main Monorepo](https://gi
    ```
    Open `http://localhost:3000` in your browser.
 
+## 📊 Reports & Data Exports (`/reports`)
+- **Executive Audit Report (PDF)**: One-click generation of complete auditor-ready PDF reports with executive KPI summaries, variance analytics, itemized transaction audit tables, and verification sign-off via `jspdf` and `jspdf-autotable`.
+- **CSV Data Exports**: Instant client-side CSV downloads for Ingested Settlements, Transactions Ledger, and Quarantined/Rejected records.
+
 ---
 
 ## 📦 Core Frontend Stack
