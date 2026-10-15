@@ -144,19 +144,19 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
         <div className="sm:hidden w-12 h-1.5 bg-slate-300 rounded-full mx-auto my-2 shrink-0"></div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-50 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-2 rounded-xl bg-[#E6FAF5] text-[#1EC8A5] border border-[#B3F0E1] shrink-0">
-              <UploadCloud className="w-5 h-5 stroke-[2.2]" />
+        <div className="flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-4 border-b border-slate-200 bg-slate-50 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-[#E6FAF5] text-[#1EC8A5] border border-[#B3F0E1] shrink-0">
+              <UploadCloud className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.2]" />
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                <h3 className="text-xs sm:text-base font-bold text-slate-900 truncate">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h3 className="text-xs sm:text-base font-bold text-slate-900 truncate shrink min-w-0">
                   {stage === 'INPUT' && 'Ingest & Reconcile Settlement CSV'}
                   {stage === 'PREVIEW' && 'Pre-Import Validation & Schema Preview'}
                   {stage === 'RESULT' && 'Reconciliation Execution Report'}
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1EC8A5]/10 text-[#1EC8A5] border border-[#1EC8A5]/20 font-mono whitespace-nowrap shrink-0">
+                <span className="px-1.5 sm:px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1EC8A5]/10 text-[#1EC8A5] border border-[#1EC8A5]/20 font-mono whitespace-nowrap shrink-0 leading-none">
                   {stage === 'INPUT' && (
                     <>
                       <span className="sm:hidden">1 of 3</span>
@@ -172,12 +172,12 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
                   {stage === 'RESULT' && (
                     <>
                       <span className="sm:hidden">3 of 3</span>
-                      <span className="hidden sm:inline">Step 3 of 3 (Complete)</span>
+                      <span className="hidden sm:inline">Step 3 of 3</span>
                     </>
                   )}
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-slate-500 font-sans truncate sm:whitespace-normal">
+              <p className="text-[10px] sm:text-xs text-slate-500 font-sans truncate mt-0.5">
                 {stage === 'INPUT' && 'Select sample dataset, upload CSV file, or paste raw batch records'}
                 {stage === 'PREVIEW' && 'Verify matching diagnostics, warnings, and duplicates before committing'}
                 {stage === 'RESULT' && 'Audit summary of inserted settlements and updated ledger accounts'}
@@ -188,17 +188,17 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
           <button
             onClick={handleClose}
             aria-label="Close dialog"
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-colors shrink-0 ml-2"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-colors shrink-0 ml-1.5"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 font-sans">
+        <div className="p-3.5 sm:p-6 space-y-4 overflow-y-auto flex-1 font-sans">
           {/* Error Banner */}
           {errorMsg && (
-            <div className="p-3.5 rounded-xl bg-[#FFF1F2] border border-[#FECDD3] text-[#E11D48] text-xs flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-[#FFF1F2] border border-[#FECDD3] text-[#E11D48] text-xs flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 shrink-0 text-[#E11D48]" />
               <span>{errorMsg}</span>
             </div>
@@ -207,11 +207,12 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
           {/* ──────────────── STAGE 1: INPUT ──────────────── */}
           {stage === 'INPUT' && (
             <div className="space-y-4">
-              {/* Mode Switcher: Responsive Flexbox on Mobile & Desktop */}
-              <div className="flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold gap-1 shadow-2xs">
+              {/* Mode Switcher: Guaranteed Single Row Grid on All Screens */}
+              <div className="grid grid-cols-3 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold gap-1 sm:gap-1.5 shadow-2xs w-full">
                 <button
+                  type="button"
                   onClick={() => setInputMode('preset')}
-                  className={`flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-[11px] sm:text-xs ${
+                  className={`w-full py-1.5 sm:py-2 px-1 sm:px-2 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap text-[11px] sm:text-xs truncate ${
                     inputMode === 'preset'
                       ? 'bg-white text-[#1EC8A5] font-bold shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 font-medium'
@@ -219,11 +220,12 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
                 >
                   <Sparkles className="w-3.5 h-3.5 text-[#1EC8A5] shrink-0" />
                   <span className="sm:hidden">Sample</span>
-                  <span className="hidden sm:inline">Authoritative Sample (19 Rows)</span>
+                  <span className="hidden sm:inline">Sample (19 Rows)</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setInputMode('file')}
-                  className={`flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-[11px] sm:text-xs ${
+                  className={`w-full py-1.5 sm:py-2 px-1 sm:px-2 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap text-[11px] sm:text-xs truncate ${
                     inputMode === 'file'
                       ? 'bg-white text-[#1EC8A5] font-bold shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 font-medium'
@@ -231,11 +233,12 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
                 >
                   <UploadCloud className="w-3.5 h-3.5 shrink-0" />
                   <span className="sm:hidden">Upload</span>
-                  <span className="hidden sm:inline">Upload CSV File</span>
+                  <span className="hidden sm:inline">Upload CSV</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setInputMode('paste')}
-                  className={`flex-1 py-1.5 sm:py-2 px-1.5 sm:px-3 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-2 whitespace-nowrap text-[11px] sm:text-xs ${
+                  className={`w-full py-1.5 sm:py-2 px-1 sm:px-2 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-1.5 whitespace-nowrap text-[11px] sm:text-xs truncate ${
                     inputMode === 'paste'
                       ? 'bg-white text-[#1EC8A5] font-bold shadow-xs'
                       : 'text-slate-600 hover:text-slate-900 font-medium'
@@ -243,7 +246,7 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
                 >
                   <Copy className="w-3.5 h-3.5 shrink-0" />
                   <span className="sm:hidden">Paste</span>
-                  <span className="hidden sm:inline">Paste CSV Text</span>
+                  <span className="hidden sm:inline">Paste Text</span>
                 </button>
               </div>
 

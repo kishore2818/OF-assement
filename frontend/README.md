@@ -13,7 +13,7 @@
 
 ## 🌐 Live Application & Credentials
 - **Live URL**: `https://of-frontend.vercel.app`
-- **Default Auditor Login**: Username `admin` | Password `admin`
+- **Default Auditor Login**: Email `admin@openfabric.co` | Password `admin123`
 
 ---
 
