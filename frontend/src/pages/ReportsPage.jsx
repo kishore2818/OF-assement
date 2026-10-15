@@ -102,16 +102,21 @@ export function ReportsPage({ evaluationDate, refreshKey }) {
     <div className="space-y-6 sm:space-y-8">
       {/* Header Banner */}
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">Financial Reports & Exports</h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#E6FAF5] text-[#1EC8A5] border border-[#B3F0E1]">
-              PDF & CSV
-            </span>
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-[#0B0F19] p-2 flex items-center justify-center border border-slate-800 shadow-sm shrink-0">
+            <img src="/favicon.png" alt="OpenFabric" className="w-full h-full object-contain" />
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Choose between full executive PDF audit documents covering all report details or raw tabular CSV datasets.
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">Financial Reports & Exports</h1>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#E6FAF5] text-[#1EC8A5] border border-[#B3F0E1]">
+                PDF & CSV
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Export official auditor-grade PDF reports with OpenFabric brand crest and compliance seals or download raw CSV datasets.
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-mono text-slate-600 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 self-start md:self-auto">
@@ -155,14 +160,24 @@ export function ReportsPage({ evaluationDate, refreshKey }) {
           </div>
 
           <div className="space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#E6FAF5] text-[#1EC8A5] flex items-center justify-center border border-[#B3F0E1]">
-              <FileText className="w-6 h-6 stroke-[2.2]" />
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#0B0F19] p-2 flex items-center justify-center border border-slate-700 shadow-sm">
+                <img src="/favicon.png" alt="OpenFabric Logo" className="w-full h-full object-contain" />
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-[#E6FAF5] text-[#1EC8A5] flex items-center justify-center border border-[#B3F0E1]">
+                <FileText className="w-6 h-6 stroke-[2.2]" />
+              </div>
             </div>
 
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Comprehensive PDF Audit Report</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-slate-900">Comprehensive PDF Audit Report</h2>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0B0F19] text-[#1EC8A5] border border-slate-700">
+                  With Brand Crest
+                </span>
+              </div>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                Generates a complete, multi-page executive audit report covering all information across your ledger.
+                Generates a complete, multi-page executive audit report featuring the official OpenFabric brand crest, certified audit badge, and itemized ledger tables.
               </p>
             </div>
 
@@ -172,6 +187,10 @@ export function ReportsPage({ evaluationDate, refreshKey }) {
                 Full Information Included in PDF:
               </span>
               <ul className="space-y-1.5 text-slate-600">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#059669] shrink-0" />
+                  <span>Official OpenFabric Brand Crest Logo & Header</span>
+                </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-[#059669] shrink-0" />
                   <span>Executive Financial Summary & KPI Metrics</span>
