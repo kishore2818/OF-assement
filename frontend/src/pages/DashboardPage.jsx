@@ -363,19 +363,21 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
           ──────────────────────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white p-2.5 sm:px-4 sm:py-2.5 rounded-2xl border border-slate-200 shadow-xs">
         {/* Left: Live System Date & Time Clock Indicator */}
-        <div className="flex items-center gap-2 px-3 py-2 sm:py-1.5 rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 text-xs font-medium shadow-2xs">
-          <Clock className="w-3.5 h-3.5 text-[#1EC8A5] shrink-0 animate-pulse" />
-          <div className="flex items-center gap-2 font-mono text-[11px] sm:text-xs">
-            <span className="font-semibold text-slate-900">
+        <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200/90 bg-slate-50 text-slate-800 text-xs font-medium shadow-2xs whitespace-nowrap overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1.5 sm:gap-2 font-mono text-[10px] min-[360px]:text-[11px] sm:text-xs whitespace-nowrap">
+            <Clock className="w-3.5 h-3.5 text-[#1EC8A5] shrink-0 animate-pulse" />
+            <span className="font-semibold text-slate-900 whitespace-nowrap">
+              <span className="hidden min-[360px]:inline">
+                {liveNow.toLocaleDateString('en-US', { weekday: 'short' })},{' '}
+              </span>
               {liveNow.toLocaleDateString('en-US', {
-                weekday: 'short',
                 month: 'short',
                 day: '2-digit',
                 year: 'numeric'
               })}
             </span>
-            <span className="text-slate-300">•</span>
-            <span className="font-bold text-[#1EC8A5] tracking-wide">
+            <span className="text-slate-300 shrink-0">•</span>
+            <span className="font-bold text-[#1EC8A5] tracking-wide whitespace-nowrap">
               {liveNow.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -383,11 +385,11 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
                 hour12: true
               })}
             </span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-              LIVE
-            </span>
           </div>
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200 shrink-0 whitespace-nowrap">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+            LIVE
+          </span>
         </div>
 
         {/* Right: Segmented Period Bar [ Daily | Monthly | Yearly | Custom ] */}

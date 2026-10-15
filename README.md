@@ -53,12 +53,11 @@ Token Type:  RFC-7519 JSON Web Token (Bearer)
 3. [Authentication & Security Architecture (JWT + CORS)](#-authentication--security-architecture-jwt--cors)
 4. [Sample Datasets & Business Scenarios (Complete Reference)](#-sample-datasets--business-scenarios-complete-reference)
 5. [Core Platform Features & Enhancements](#-core-platform-features--enhancements)
-6. [Design System & UI Color Scheme](#-design-system--ui-color-scheme)
-7. [REST API Documentation](#-rest-api-documentation)
-8. [Database Schema & Entity Relationship](#-database-schema--entity-relationship)
-9. [Automated Testing Suite](#-automated-testing-suite)
-10. [Local Development & Quick Start](#-local-development--quick-start)
-11. [Deployment & Environment Configuration](#-deployment--environment-configuration)
+6. [REST API Documentation](#-rest-api-documentation)
+7. [Database Schema & Entity Relationship](#-database-schema--entity-relationship)
+8. [Automated Testing Suite](#-automated-testing-suite)
+9. [Local Development & Quick Start](#-local-development--quick-start)
+10. [Deployment & Environment Configuration](#-deployment--environment-configuration)
 
 ---
 
@@ -195,7 +194,6 @@ All sample scenarios are pre-packaged as individual CSV files in the repository 
 | **Scenario 6** | `TXN005` | $234.50 | `scenario_6.csv` | 2 DEBIT tranches | Tier 1 (`LC005`) | `PARTIAL` $\rightarrow$ `FULLY_SETTLED` | `CLEAR` 🟢 |
 | **Scenario 7** | `TXN006` | $87.25 | `scenario_7.csv` | 1 DEBIT + 1 CREDIT | Tier 1 (`LC006`) | `PARTIAL` ($75.00 net) | `WARNING` 🟡 |
 | **Master Batch**| Multiple | Multi | `all_scenarios_1_to_7.csv`| 10 records | Multi-Tier Engine | Batch Reconciled | Mixed |
-| **Scenario 8** | `TXN008` | $1,299.99 | *(Aging Check)* | No settlements | Aging SLA Engine (>7d) | `PENDING` | `CRITICAL` 🔴 |
 
 ---
 
@@ -308,27 +306,20 @@ SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
 
 ---
 
-#### 📁 Scenario 8: Overdue Aged Settlement Detection (>7 Days SLA)
-- **Business Logic**: Transactions authorized $>7$ calendar days prior with $\$0$ settlement are flagged as critical operational overdue risks.
-- **Demonstration**: Seeded transactions `TXN008` (Apple, authorized `2025-08-05`, $\$1,299.99$) and `TXN010` (Netflix, authorized `2025-08-07`, $\$15.99$).
-- **Result**: When evaluated against default date `2025-08-15`, elapsed days exceed 7 days $\rightarrow$ Severity: `CRITICAL` 🔴 (`SETTLEMENT_OVERDUE_CRITICAL`).
+#### 📁 Scenarios 8–12: Integrity & Error Boundary Protection
 
----
-
-#### 📁 Scenarios 9–13: Integrity & Error Boundary Protection
-
-- **Scenario 9 (Duplicate Idempotency)**: Re-uploading an identical CSV skips previously imported `settlement_id` values with zero double-counting.
-- **Scenario 10 (Conflicting Duplicate Quarantine)**: If an incoming settlement shares an ID with an existing record but contains differing financial amounts, it is rejected and quarantined in `reconciliation_run_items`.
-- **Scenario 11 (Ambiguous Match Protection)**: If fallback composite keys match multiple candidate transactions, the engine safely flags the row as `AMBIGUOUS` rather than guessing.
-- **Scenario 12 (Currency Mismatch Quarantine)**: Settlements in mismatched currencies (e.g., EUR settlement against USD transaction) are rejected.
-- **Scenario 13 (Declined / Failed Txn Exclusion)**: Transactions with status `FAILED` (`TXN015`) or `DECLINED` (`TXN016`) are strictly barred from receiving settlement funds.
+- **Scenario 8 (Duplicate Idempotency)**: Re-uploading an identical CSV skips previously imported `settlement_id` values with zero double-counting.
+- **Scenario 9 (Conflicting Duplicate Quarantine)**: If an incoming settlement shares an ID with an existing record but contains differing financial amounts, it is rejected and quarantined in `reconciliation_run_items`.
+- **Scenario 10 (Ambiguous Match Protection)**: If fallback composite keys match multiple candidate transactions, the engine safely flags the row as `AMBIGUOUS` rather than guessing.
+- **Scenario 11 (Currency Mismatch Quarantine)**: Settlements in mismatched currencies (e.g., EUR settlement against USD transaction) are rejected.
+- **Scenario 12 (Declined / Failed Txn Exclusion)**: Transactions with status `FAILED` (`TXN015`) or `DECLINED` (`TXN016`) are strictly barred from receiving settlement funds.
 
 ---
 
 ## ✨ Core Platform Features & Enhancements
 
 ### 1. Interactive 3-Stage CSV Upload Wizard
-- **Stage 1 (Select & Configure)**: Drag-and-drop CSV, paste raw text, or select any pre-configured assignment scenario.
+- **Stage 1 (Select & Configure)**: Drag-and-drop CSV file or paste raw settlement CSV text directly.
 - **Stage 2 (Validation Preview & Dry Run)**: Previews records, executes Zod schema validation, and identifies matched transactions with **zero database mutation**.
 - **Stage 3 (Execution Report & Audit Ingestion)**: Commits the atomic batch, summarizes newly inserted, duplicates skipped, and invalid rows, and provides a direct button to **Download Rejected Records CSV**.
 
@@ -361,23 +352,6 @@ SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
 ### 7. Instant Seed State Reset
 - One-click **Reset Database** button in the header and settings page.
 - Cleans and re-populates the exact baseline seeded data and migrations within 50ms.
-
----
-
-## 🎨 Design System & UI Color Scheme
-
-The user interface follows the **OpenFabric Modern Financial Palette**, built with Tailwind CSS, custom glassmorphism, and WCAG AAA compliance:
-
-| Color Role | Hex Code | Visual Preview | Application |
-| :--- | :--- | :--- | :--- |
-| **Obsidian Dark** | `#0F1B4C` | ![#0F1B4C](https://placehold.co/15x15/0F1B4C/0F1B4C.png) | Sidebar background, primary brand headers, prominent buttons |
-| **Tech Cyan** | `#1EC8A5` | ![#1EC8A5](https://placehold.co/15x15/1EC8A5/1EC8A5.png) | Accent badges, logo endpoints, active indicators, success metrics |
-| **Alabaster Canvas** | `#F8FAFC` | ![#F8FAFC](https://placehold.co/15x15/F8FAFC/F8FAFC.png) | Glare-free page background, dashboard workspace surface |
-| **Card Surface** | `#FFFFFF` | ![#FFFFFF](https://placehold.co/15x15/FFFFFF/FFFFFF.png) | Clean elevated container surfaces, data tables, modal dialogs |
-| **Critical Rose** | `#E11D48` | ![#E11D48](https://placehold.co/15x15/E11D48/E11D48.png) | Over-settlement alerts, overdue SLA warnings, critical issues |
-| **Warning Amber** | `#D97706` | ![#D97706](https://placehold.co/15x15/D97706/D97706.png) | Partial under-settlement badges, approaching SLA thresholds |
-| **Settled Emerald**| `#059669` | ![#059669](https://placehold.co/15x15/059669/059669.png) | Fully settled transactions, clean reconciliations, matched states |
-| **Refund Violet** | `#7C3AED` | ![#7C3AED](https://placehold.co/15x15/7C3AED/7C3AED.png) | Legitimate return credits, reversal transactions, credit events |
 
 ---
 

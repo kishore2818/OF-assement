@@ -116,14 +116,14 @@ export function Header({
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Live Clock / System Time */}
             <div 
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#EFF2F7] border border-[#D1D8E6] text-[#0F1B4C] shadow-2xs"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#EFF2F7] border border-[#D1D8E6] text-[#0F1B4C] shadow-2xs whitespace-nowrap"
               title="Live System Time"
             >
               <Clock className="w-3.5 h-3.5 text-[#1EC8A5] shrink-0 animate-pulse" />
-              <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs">
-                <span className="font-semibold text-[#0F1B4C] hidden xs:inline">{currentDateStr}</span>
+              <div className="flex items-center gap-1.5 font-mono text-[11px] sm:text-xs whitespace-nowrap">
+                <span className="font-semibold text-[#0F1B4C] hidden xs:inline whitespace-nowrap">{currentDateStr}</span>
                 <span className="text-[#9EA5C7] hidden xs:inline">•</span>
-                <span className="font-bold text-[#1EC8A5] tracking-wide">{currentTimeStr}</span>
+                <span className="font-bold text-[#1EC8A5] tracking-wide whitespace-nowrap">{currentTimeStr}</span>
               </div>
             </div>
 

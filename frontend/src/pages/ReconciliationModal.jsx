@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Copy,
   RefreshCw,
-  Sparkles,
   ArrowRight,
   Download,
   AlertCircle,
@@ -18,33 +17,12 @@ import {
 } from 'lucide-react';
 import { previewReconciliation, runReconciliation, getRejectedItemsExportUrl } from '../services/api';
 
-const DEFAULT_CSV_SAMPLE = `settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET001,LC001,ACC123,Amazon.com,2025-08-14,2025-08-15,125.99,DEBIT,USD
-SET002,LC002,ACC124,Starbucks,2025-08-14,2025-08-15,4.75,DEBIT,USD
-SET003,LC003,ACC125,Shell Gas,2025-08-14,2025-08-15,35.30,DEBIT,USD
-SET004,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,899.99,DEBIT,USD
-SET005,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,20.00,CREDIT,USD
-SET006,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,150.00,DEBIT,USD
-SET007,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,84.50,DEBIT,USD
-SET008,LC006,ACC128,Target,2025-08-14,2025-08-15,87.25,DEBIT,USD
-SET009,LC007,ACC129,Walmart,2025-08-14,2025-08-15,180.78,DEBIT,USD
-SET010,LC008,ACC130,Apple,2025-08-05,2025-08-06,1299.99,DEBIT,USD
-SET011,LC008,ACC130,Apple,2025-08-05,2025-08-08,299.99,CREDIT,USD
-SET012,LC009,ACC131,Nike,2025-08-14,2025-08-15,189.95,DEBIT,USD
-SET014,,ACC135,Corner Deli,2025-08-14,2025-08-15,32.45,DEBIT,USD
-SET015,,ACC136,Shell Gas,2025-08-14,2025-08-15,28.90,DEBIT,USD
-SET016,LC999,ACC199,Disney Plus,2025-08-14,2025-08-15,99.99,DEBIT,USD
-SET017,,ACC137,Amazon.com,2025-08-14,2025-08-15,199.99,DEBIT,USD
-SET018,,ACC777,Uber Taxi,2025-08-10,2025-08-11,25.75,DEBIT,USD
-SET019,LC002,ACC124,Starbucks,2025-08-14,2025-08-15,1.50,CREDIT,USD
-SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD`;
-
 export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
   // Wizard Stages: 'INPUT' -> 'PREVIEW' -> 'RESULT'
   const [stage, setStage] = useState('INPUT');
   const [selectedFile, setSelectedFile] = useState(null);
   const [csvText, setCsvText] = useState('');
-  const [inputMode, setInputMode] = useState('preset');
+  const [inputMode, setInputMode] = useState('file');
 
   // Preview & Processing state
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -59,6 +37,7 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
     setStage('INPUT');
     setSelectedFile(null);
     setCsvText('');
+    setInputMode('file');
     setPreviewData(null);
     setResult(null);
     setErrorMsg(null);
@@ -83,13 +62,10 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
       if (!selectedFile) throw new Error('Please select a CSV file first.');
       payload = selectedFile;
       fileName = selectedFile.name;
-    } else if (inputMode === 'paste') {
+    } else {
       if (!csvText.trim()) throw new Error('Please paste CSV contents.');
       payload = csvText;
       fileName = 'pasted_settlements.csv';
-    } else {
-      payload = DEFAULT_CSV_SAMPLE;
-      fileName = 'authoritative_sample_19_records.csv';
     }
     return { payload, fileName };
   }
@@ -191,19 +167,10 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
           {stage === 'INPUT' && (
             <div className="space-y-4">
               {/* Mode Switcher */}
-              <div className="flex flex-col sm:flex-row p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold gap-1">
-                <button
-                  onClick={() => setInputMode('preset')}
-                  className={`flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
-                    inputMode === 'preset' ? 'bg-white text-[#1EC8A5] shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#1EC8A5]" />
-                  Authoritative Test Dataset (19 Rows)
-                </button>
+              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold gap-1">
                 <button
                   onClick={() => setInputMode('file')}
-                  className={`flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                  className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
                     inputMode === 'file' ? 'bg-white text-[#1EC8A5] shadow-xs' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -212,7 +179,7 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
                 </button>
                 <button
                   onClick={() => setInputMode('paste')}
-                  className={`flex-1 py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
+                  className={`py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 ${
                     inputMode === 'paste' ? 'bg-white text-[#1EC8A5] shadow-xs' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -220,21 +187,6 @@ export function ReconciliationModal({ isOpen, onClose, onReconciled }) {
                   Paste CSV Text
                 </button>
               </div>
-
-              {/* Preset Description */}
-              {inputMode === 'preset' && (
-                <div className="rounded-xl border border-[#A7F3D0] bg-[#ECFDF5] p-4 flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#059669] shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <h4 className="text-sm font-semibold text-[#065F46]">Exercise Provided Dataset</h4>
-                    <p className="text-xs text-[#047857] leading-relaxed">
-                      Contains 19 test settlement records covering all required technical scenarios:
-                      primary lifecycle matches, fallback composite keys (Corner Deli, Shell Gas), multi-tranche partials,
-                      complex refund credits (Apple), over-settlement (Walmart), and quarantined unmatched records (Disney Plus).
-                    </p>
-                  </div>
-                </div>
-              )}
 
               {/* File Upload Zone */}
               {inputMode === 'file' && (
