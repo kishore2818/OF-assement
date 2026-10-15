@@ -356,6 +356,60 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
     return null;
   };
 
+  const CustomPieTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const entryColor = data.payload.color || data.color || '#1EC8A5';
+      const total = summary?.totalTransactions || 0;
+      const percentage = total > 0 
+        ? Math.round((Number(data.value) / total) * 100) 
+        : 0;
+
+      return (
+        <div className="bg-[#0F1B4C] p-2.5 px-3.5 rounded-xl border border-[#1EC8A5]/40 shadow-2xl text-xs space-y-1.5 min-w-[190px] text-white">
+          <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1.5">
+            <span className="flex items-center gap-1.5 font-bold text-white text-xs">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: entryColor }}></span>
+              {data.name}
+            </span>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1EC8A5]/20 text-[#1EC8A5] font-bold border border-[#1EC8A5]/30">
+              {percentage}%
+            </span>
+          </div>
+          <div className="flex items-center justify-between pt-0.5 font-mono">
+            <span className="text-[11px] text-slate-300 font-sans">Transaction Count:</span>
+            <span className="font-bold text-white text-xs bg-white/10 px-2 py-0.5 rounded font-mono">
+              {data.value}
+            </span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomBarTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const entryColor = data.payload.color || data.color || '#1EC8A5';
+      return (
+        <div className="bg-[#0F1B4C] p-2.5 px-3.5 rounded-xl border border-[#1EC8A5]/40 shadow-2xl text-xs space-y-1.5 min-w-[160px] text-white">
+          <div className="flex items-center gap-1.5 border-b border-white/10 pb-1.5 font-bold text-white text-xs">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: entryColor }}></span>
+            <span>{label || data.name}</span>
+          </div>
+          <div className="flex items-center justify-between pt-0.5 font-mono">
+            <span className="text-[11px] text-slate-300 font-sans">Volume:</span>
+            <span className="font-bold text-white text-xs bg-white/10 px-2 py-0.5 rounded font-mono">
+              {data.value}
+            </span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="space-y-5 sm:space-y-8 font-sans">
       {/* ────────────────────────────────────────────────────────────────────────────
@@ -753,16 +807,9 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
                 />
                 <YAxis stroke="#5B6487" fontSize={10} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0F1B4C',
-                    borderColor: '#1EC8A5',
-                    borderRadius: '0.75rem',
-                    color: '#FFFFFF',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)'
-                  }}
-                  cursor={{ fill: 'rgba(30, 200, 165, 0.06)' }}
+                  content={<CustomBarTooltip />}
+                  cursor={{ fill: 'rgba(30, 200, 165, 0.08)' }}
+                  allowEscapeViewBox={{ x: true, y: true }}
                 />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]} isAnimationActive={true} animationDuration={700}>
                   {statusChartData.map((entry, index) => (
@@ -811,16 +858,9 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
                 <XAxis dataKey="name" stroke="#5B6487" fontSize={10} tickLine={false} interval={0} />
                 <YAxis stroke="#5B6487" fontSize={10} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0F1B4C',
-                    borderColor: '#1EC8A5',
-                    borderRadius: '0.75rem',
-                    color: '#FFFFFF',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)'
-                  }}
-                  cursor={{ fill: 'rgba(232, 101, 74, 0.06)' }}
+                  content={<CustomBarTooltip />}
+                  cursor={{ fill: 'rgba(232, 101, 74, 0.08)' }}
+                  allowEscapeViewBox={{ x: true, y: true }}
                 />
                 <Bar dataKey="count" radius={[6, 6, 0, 0]} isAnimationActive={true} animationDuration={700}>
                   {agingData.map((entry, index) => (
@@ -886,15 +926,8 @@ export function DashboardPage({ evaluationDate, refreshKey, search, onOpenReconc
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{
-                    backgroundColor: '#0F1B4C',
-                    borderColor: '#1EC8A5',
-                    borderRadius: '0.75rem',
-                    color: '#FFFFFF',
-                    fontSize: '11px',
-                    fontFamily: 'monospace',
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)'
-                  }}
+                  content={<CustomPieTooltip />}
+                  allowEscapeViewBox={{ x: true, y: true }}
                 />
                 <Legend
                   verticalAlign="bottom"
