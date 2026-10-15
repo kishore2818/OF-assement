@@ -38,8 +38,9 @@ All individual scenario datasets are available in the [Main Monorepo](https://gi
    ```bash
    npm install
    npm run dev
+   # Server runs on port 3000
    ```
-   Open `http://localhost:5173` in your browser.
+   Open `http://localhost:3000` in your browser.
 
 ---
 
