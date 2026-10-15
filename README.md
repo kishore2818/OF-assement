@@ -51,20 +51,19 @@ Token Type:  RFC-7519 JSON Web Token (Bearer)
 1. [Executive Summary & Problem Statement](#executive-summary--problem-statement)
 2. [Architectural Overview & System Flow](#architectural-overview--system-flow)
 3. [Authentication & Security Architecture (JWT + CORS)](#authentication--security-architecture-jwt--cors)
-4. [Sample Datasets & Business Scenarios](#sample-datasets--business-scenarios-complete-reference)
+4. [Sample Datasets & Business Scenarios](#sample-datasets--business-scenarios)
 5. [Core Platform Features & Enhancements](#core-platform-features--enhancements)
-6. [Bonus Features Implemented (PDF/CSV Exports & Advanced Filtering)](#bonus-features-implemented)
-7. [Assumptions Made](#assumptions-made)
-8. [Known Limitations & Future Roadmap](#known-limitations--future-roadmap)
-9. [REST API Documentation](#rest-api-documentation)
-10. [Database Schema & Entity Relationship](#database-schema--entity-relationship)
-11. [Automated Testing Suite](#automated-testing-suite)
-12. [Local Development & Quick Start](#local-development--quick-start)
-13. [Deployment & Environment Configuration](#deployment--environment-configuration)
+6. [Assumptions Made](#assumptions-made)
+7. [Known Limitations & Future Roadmap](#known-limitations--future-roadmap)
+8. [REST API Documentation](#rest-api-documentation)
+9. [Database Schema & Entity Relationship](#database-schema--entity-relationship)
+10. [Automated Testing Suite](#automated-testing-suite)
+11. [Local Development & Quick Start](#local-development--quick-start)
+12. [Deployment & Environment Configuration](#deployment--environment-configuration)
 
 ---
 
-## 📌 Executive Summary & Problem Statement
+## Executive Summary & Problem Statement
 
 In modern fintech, internal transaction authorization records must be reconciled against subsequent processor and acquirer settlement files. This platform solves the core challenges of settlement reconciliation:
 
@@ -76,7 +75,7 @@ In modern fintech, internal transaction authorization records must be reconciled
 
 ---
 
-## 🏗️ Architectural Overview & System Flow
+## Architectural Overview & System Flow
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -127,67 +126,18 @@ In modern fintech, internal transaction authorization records must be reconciled
 
 ---
 
-## 🔒 Authentication & Security Architecture (JWT + CORS)
+## Authentication & Security Architecture (JWT + CORS)
 
-### 1. Enterprise JWT Authentication Flow
-
-The system implements secure session management compliant with RFC-7519:
-
-```
-[Auditor Client]                      [Auth Controller]                  [Database]
-       │                                     │                                │
-       │─── 1. POST /auth/login ────────────►│                                │
-       │    { email, password }              │─── 2. Query user by email ────►│
-       │                                     │◄── 3. Return password hash ────│
-       │                                     │
-       │                                     │─── 4. bcrypt.compareSync()
-       │                                     │─── 5. jwt.sign(payload, secret)
-       │                                     │
-       │◄── 6. 200 OK + JWT Bearer Token ────│
-       │    { token, user: { role, email } } │
-       │
-       │─── 7. GET /auth/me ────────────────►│
-       │    Header: Authorization: Bearer <T>│─── 8. Verify JWT & Return Role
-```
-
-- **Password Storage**: Passwords hashed using `bcryptjs` with 10 salt rounds.
-- **Payload Schema**: Signed claims include `id`, `email`, `name`, and `role`.
-- **Session Expiry**: Configured for 24-hour token longevity.
-- **Client Guard**: Protected routes enforce valid session status, redirecting unauthorized users directly to `/login`.
-
-### 2. Cross-Origin Resource Sharing (CORS) Configuration
-
-To enable seamless, secure communication between the Vercel-hosted frontend (`https://of-frontend.vercel.app`) and the Render-hosted backend API (`https://of-backend.onrender.com`), the backend applies Express CORS middleware:
-
-```typescript
-// backend/src/app.ts & backend/src/config/index.ts
-import cors from 'cors';
-
-const app = express();
-
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
-```
-
-#### CORS Security Checklist:
-- **Preflight Support**: Gracefully responds to HTTP `OPTIONS` requests across all routes.
-- **Header Permissions**: Allows `Authorization: Bearer <token>` and `Content-Type: application/json`, `multipart/form-data`.
-- **Environment Driven**: `CORS_ORIGIN` configurable in production to restrict domains when required.
-- **Frontend Fallback**: The client dynamically checks `VITE_API_URL` and trims trailing slashes, ensuring no broken URL paths.
+- **JWT Session Security (RFC-7519)**: The API issues signed Bearer tokens upon login (`POST /auth/login`) verified by middleware (`GET /auth/me`). Passwords are encrypted with `bcryptjs` (10 salt rounds).
+- **CORS Protection**: Configured in Express to allow secure communication between the Vercel frontend (`https://of-frontend.vercel.app`) and the Render backend API (`https://of-backend.onrender.com`), supporting preflight `OPTIONS` requests, credentials, and authorized headers.
 
 ---
 
-## 📊 Sample Datasets & Business Scenarios (Complete Reference)
+## Sample Datasets & Business Scenarios
 
-All sample scenarios are pre-packaged as individual CSV files in the repository root and can be tested immediately in the UI or via REST endpoints.
+All scenario datasets are available as standalone CSV files in the repository root for testing via the dashboard or API:
 
-### Summary Matrix of Scenarios
-
-| Scenario | Target Txn | Amount | Settlement File | Settlement Rows | Matching Mechanism | Resulting Status | Severity |
+| Scenario | Target Txn | Amount | Dataset File | Settlement Details | Matching Method | Resulting Status | Severity |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Scenario 1** | `TXN001` | $125.99 | `scenario_1.csv` | 1 DEBIT ($125.99) | Tier 1 (`LC001`) | `FULLY_SETTLED` | `CLEAR` 🟢 |
 | **Scenario 2** | `TXN003` | $45.30 | `scenario_2.csv` | 1 DEBIT ($35.30) | Tier 1 (`LC003`) | `PARTIAL` | `WARNING` 🟡 |
@@ -196,130 +146,22 @@ All sample scenarios are pre-packaged as individual CSV files in the repository 
 | **Scenario 5** | `TXN013` | $32.45 | `scenario_5.csv` | 1 DEBIT (No LC) | Tier 2 Composite Fallback | `FULLY_SETTLED` | `CLEAR` 🟢 |
 | **Scenario 6** | `TXN005` | $234.50 | `scenario_6.csv` | 2 DEBIT tranches | Tier 1 (`LC005`) | `PARTIAL` $\rightarrow$ `FULLY_SETTLED` | `CLEAR` 🟢 |
 | **Scenario 7** | `TXN006` | $87.25 | `scenario_7.csv` | 1 DEBIT + 1 CREDIT | Tier 1 (`LC006`) | `PARTIAL` ($75.00 net) | `WARNING` 🟡 |
-| **Master Batch**| Multiple | Multi | `all_scenarios_1_to_7.csv`| 10 records | Multi-Tier Engine | Batch Reconciled | Mixed |
+| **Master Batch**| Multiple | Multi | `all_scenarios_1_to_7.csv` | 10 records | Multi-Tier Engine | Batch Reconciled | Mixed |
+| **Full Batch** | Multiple | 19 Rows | `exercise_dataset_19_rows.csv` | 19 records | Multi-Tier Engine | Complete Exercise Batch | Mixed |
+
+### Scenario Logic & Edge-Case Protection:
+- **Scenario 1 (Exact Match)**: Exact 1-to-1 match via lifecycle ID; settles balance to $0.00 (`FULLY_SETTLED`).
+- **Scenario 2 (Under-Settlement)**: Processor remits $35.30 of $45.30; flags $10.00 shortfall as `WARNING`.
+- **Scenario 3 (Refund Credit)**: Net settlement: $\$899.99 \text{ (DEBIT)} - \$20.00 \text{ (CREDIT)} = \$879.99$; marked `REFUNDED` (`CLEAR`).
+- **Scenario 4 (Over-Settlement)**: Processor remits $180.78 on $156.78 authorization; flags +$24.00 excess as `CRITICAL`.
+- **Scenario 5 (Composite Fallback)**: Missing `lifecycle_id` resolves via `account_id` + `merchant_name` + `transaction_date`.
+- **Scenario 6 (Multi-Tranche)**: Progressive installments ($150.00 + $84.50 = $234.50) transition from `PARTIAL` to `FULLY_SETTLED`.
+- **Scenario 7 (Partial Return)**: Net settlement: $\$87.25 \text{ (DEBIT)} - \$12.25 \text{ (CREDIT)} = \$75.00 < \$87.25$; flags under-settlement as `WARNING`.
+- **Edge Cases (Scenarios 8–12)**: Idempotency skips re-uploaded duplicates with zero double-counting; conflicting amounts are quarantined; ambiguous candidates are flagged rather than guessed; currency mismatches (`EUR` vs `USD`) are quarantined; failed/declined transactions are barred from settlement.
 
 ---
 
-### Detailed Scenario Breakdown & Raw CSV Data
-
-#### 📁 Scenario 1: Exact 1-to-1 Match (`scenario_1.csv`)
-- **Business Logic**: Normal transaction settled in full by processor via matching `lifecycle_id`.
-- **Calculation**: $\$125.99 \text{ (Debit)} - \$0.00 = \$125.99 \equiv \text{Transaction Amount}$.
-- **Result**: `settlement_status = FULLY_SETTLED`, Severity: `CLEAR` 🟢.
-
-```csv
-settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET001,LC001,ACC123,Amazon.com,2025-08-14,2025-08-15,125.99,DEBIT,USD
-```
-
----
-
-#### 📁 Scenario 2: Partial Under-Settlement (`scenario_2.csv`)
-- **Business Logic**: Transaction authorized for $\$45.30$, but processor only remitted $\$35.30$.
-- **Calculation**: $\$35.30 \text{ (Debit)} < \$45.30 \text{ (Expected)}$. Discrepancy: $-\$10.00$.
-- **Result**: `settlement_status = PARTIAL`, Severity: `WARNING` 🟡.
-
-```csv
-settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET003,LC003,ACC125,Shell Gas,2025-08-14,2025-08-15,35.30,DEBIT,USD
-```
-
----
-
-#### 📁 Scenario 3: Legitimate Refund & Net Balance (`scenario_3.csv`)
-- **Business Logic**: Customer purchase for $\$899.99$ followed by a partial return of $\$20.00$.
-- **Calculation**:
-  $$\text{Net Settled} = \$899.99 \text{ (DEBIT)} - \$20.00 \text{ (CREDIT)} = \$879.99$$
-- **Result**: `settlement_status = REFUNDED`, Severity: `CLEAR` 🟢 (Legitimate return, not flagged as discrepancy).
-
-```csv
-settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET004,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,899.99,DEBIT,USD
-SET005,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,20.00,CREDIT,USD
-```
-
----
-
-#### 📁 Scenario 4: Critical Over-Settlement Discrepancy (`scenario_4.csv`)
-- **Business Logic**: Transaction authorized for $\$156.78$, but processor deposited $\$180.78$.
-- **Calculation**: $\$180.78 \text{ (Debit)} > \$156.78 \text{ (Txn Amount)}$. Excess: $+\$24.00$.
-- **Result**: `settlement_status = OVER_SETTLED`, Severity: `CRITICAL` 🔴. Generates an exception dossier entry in `/exceptions`.
-
-```csv
-settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET009,LC007,ACC129,Walmart,2025-08-14,2025-08-15,180.78,DEBIT,USD
-```
-
----
-
-#### 📁 Scenario 5: Missing Lifecycle ID / Composite Fallback Matching (`scenario_5.csv`)
-- **Business Logic**: Acquirer settlement file has an empty `lifecycle_id`. The engine falls back to matching composite key: `account_id` (`ACC135`) + `merchant_name` (`Corner Deli`) + `transaction_date` (`2025-08-14`).
-- **Result**: Successfully resolved to `TXN013`, `settlement_status = FULLY_SETTLED`, Match Method: `FALLBACK_COMPOSITE`.
-
-```csv
-settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET014,,ACC135,Corner Deli,2025-08-14,2025-08-15,32.45,DEBIT,USD
-```
-
----
-
-#### 📁 Scenario 6: Multi-Tranche Progressive Settlement (`scenario_6.csv`)
-- **Business Logic**: Large transaction ($234.50) settled in two separate tranches.
-  - Tranche 1 (`SET006`): $\$150.00 \text{ DEBIT} \rightarrow$ State becomes `PARTIAL`.
-  - Tranche 2 (`SET007`): $\$84.50 \text{ DEBIT} \rightarrow$ Total equals $\$234.50 \rightarrow$ Transitions to `FULLY_SETTLED`.
-- **Files Included**: Both tranches in `scenario_6.csv`, or step-by-step in `scenario_6_part1.csv` and `scenario_6_part2.csv`.
-
-```csv
-settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET006,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,150.00,DEBIT,USD
-SET007,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,84.50,DEBIT,USD
-```
-
----
-
-#### 📁 Scenario 7: Multi-Event Settlement with Partial Credit (`scenario_7.csv`)
-- **Business Logic**: Transaction authorized for $\$87.25$. Processor deposits $\$87.25$ and subsequently issues a $\$12.25$ partial return credit.
-- **Calculation**: $\$87.25 \text{ (DEBIT)} - \$12.25 \text{ (CREDIT)} = \$75.00$. Net settled is under transaction total.
-- **Result**: `settlement_status = PARTIAL`, Severity: `WARNING` 🟡.
-
-```csv
-settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET008,LC006,ACC128,Target,2025-08-14,2025-08-15,87.25,DEBIT,USD
-SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
-```
-
----
-
-#### 📁 Master Ingestion File: All Scenarios 1 to 7 (`all_scenarios_1_to_7.csv`)
-Ingests the entire suite of settlement records in a single run:
-
-```csv
-settlement_id,lifecycle_id,account_id,merchant_name,transaction_date,settlement_date,settlement_amount,settlement_type,currency
-SET001,LC001,ACC123,Amazon.com,2025-08-14,2025-08-15,125.99,DEBIT,USD
-SET003,LC003,ACC125,Shell Gas,2025-08-14,2025-08-15,35.30,DEBIT,USD
-SET004,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,899.99,DEBIT,USD
-SET005,LC004,ACC126,Best Buy,2025-08-14,2025-08-15,20.00,CREDIT,USD
-SET009,LC007,ACC129,Walmart,2025-08-14,2025-08-15,180.78,DEBIT,USD
-SET014,,ACC135,Corner Deli,2025-08-14,2025-08-15,32.45,DEBIT,USD
-SET006,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,150.00,DEBIT,USD
-SET007,LC005,ACC127,Home Depot,2025-08-14,2025-08-15,84.50,DEBIT,USD
-SET008,LC006,ACC128,Target,2025-08-14,2025-08-15,87.25,DEBIT,USD
-SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
-```
-
----
-
-#### 📁 Scenarios 8–12: Integrity & Error Boundary Protection
-
-- **Scenario 8 (Duplicate Idempotency)**: Re-uploading an identical CSV skips previously imported `settlement_id` values with zero double-counting.
-- **Scenario 9 (Conflicting Duplicate Quarantine)**: If an incoming settlement shares an ID with an existing record but contains differing financial amounts, it is rejected and quarantined in `reconciliation_run_items`.
-- **Scenario 10 (Ambiguous Match Protection)**: If fallback composite keys match multiple candidate transactions, the engine safely flags the row as `AMBIGUOUS` rather than guessing.
-- **Scenario 11 (Currency Mismatch Quarantine)**: Settlements in mismatched currencies (e.g., EUR settlement against USD transaction) are rejected.
-- **Scenario 12 (Declined / Failed Txn Exclusion)**: Transactions with status `FAILED` (`TXN015`) or `DECLINED` (`TXN016`) are strictly barred from receiving settlement funds.
-
----
-
-## ✨ Core Platform Features & Enhancements
+## Core Platform Features & Enhancements
 
 ### 1. Interactive 3-Stage CSV Upload Wizard
 - **Stage 1 (Select & Configure)**: Drag-and-drop CSV file or paste raw settlement CSV text directly.
@@ -357,60 +199,23 @@ SET020,LC006,ACC128,Target,2025-08-14,2025-08-15,12.25,CREDIT,USD
 - Cleans and re-populates the exact baseline seeded data and migrations within 50ms.
 
 ### 8. Auditor Reports Desk & Dual-Format Export Engine (`/reports`)
-The platform features an automated reporting center enabling financial auditors and stakeholders to generate compliance-grade reports in both **PDF** and **CSV** formats:
-- **Executive Reconciliation Audit Report (PDF)**:
-  - Generates client-side via `jspdf` and `jspdf-autotable` with custom styling.
-  - Includes OpenFabric brand banner, evaluation date metadata, executive KPI cards, status and issue triage distribution, aging bands, running variance calculation, itemized transaction audit tables, and algorithmic verification sign-off.
-- **Comprehensive CSV Ledger Exports**:
-  - **Settlement Records CSV**: Ingested processor settlements with lifecycle IDs, account numbers, and net settlement amounts.
-  - **Transactions Ledger CSV**: Complete export of all transactions with real-time settlement status, outstanding balances, and issue severity flags (`GET /transactions/export`).
-  - **Quarantined & Rejected Records CSV**: Immediate download of invalid, conflicting duplicate, or currency-mismatched records for external auditing.
+The platform includes an automated reporting center enabling financial auditors and stakeholders to generate compliance-grade reports in both **PDF** and **CSV** formats:
+- **Executive Audit Report (PDF)**:
+  - Client-side generator using `jspdf` and `jspdf-autotable`.
+  - Features the official OpenFabric brand crest, executive KPI metric cards, status distribution breakdown, running variance calculations, itemized ledger audit tables with color-differentiated status cells (`didParseCell`), and formal algorithmic certification sign-off with running page footers (`Page X of Y`).
+- **Color-Coded Multi-Dataset CSV Exports**:
+  - **Filtered Transactions CSV (`GET /transactions/export`)**: Formatted with UTF-8 status emoji indicators (`🟢 FULLY_SETTLED`, `🟡 PARTIAL`, `🔴 OVER_SETTLED`, `🟣 REFUNDED`, `⚪ PENDING`) and severity flags (`🔴 CRITICAL`, `🟡 WARNING`, `🟢 CLEAR`) for immediate visual clarity in Excel and Google Sheets.
+  - **Ingested Settlements CSV**: Formatted with `🟢 DEBIT` / `🟣 CREDIT` badges and transaction linkage markers.
+  - **Transaction Dossier CSV**: Granular timeline exports highlighting matching methods (`🔹 PRIMARY_LIFECYCLE` vs `🔸 FALLBACK_COMPOSITE`).
+  - **Quarantined Records CSV**: Instant download of invalid, conflicting duplicate, or currency-mismatched records directly from reconciliation runs.
 
----
-
-## 🏆 Bonus Features Implemented
-
-The platform fully delivers both optional bonus specifications from the assignment with production-ready execution:
-
-### 1. Advanced Export Functionality (Interactive PDF & Colorful CSV Reports)
-
-#### 📄 Executive PDF Audit Report (`generateReconciliationPDF`)
-- **Embedded Brand Identity**: High-resolution OpenFabric crest logo rendered on a deep obsidian (`#0B0F19`) header with an emerald mint accent (`#1EC8A5`) and certified audit badge.
-- **Four-Quadrant KPI Executive Summary**: Total transaction count, settlement match rate, total settled volume, outstanding balance, ingested tranches count, and critical/warning issue counters.
-- **Color-Coded Status & Issue Breakdown**: Dynamic distribution table where status rows are color-differentiated (`Fully Settled` in emerald, `Partial` in amber, `Over-Settled` in rose, `Refunded` in purple, `Pending` in slate).
-- **Granular Ledger Transactions Table with `didParseCell`**: Every transaction row is styled with colored settlement status badges and issue severity indicators (`🔴 CRITICAL`, `🟡 WARNING`, `🟢 Clean`).
-- **Processor Settlement Tranches Breakdown**: Distinct green debit additions (`+$`) vs. purple credit refunds (`-$`) with linked transaction IDs and payment rail references.
-- **Compliance Certification & Running Footers**: Formal algorithmic verification audit sign-off with dynamic page counting (`Page X of Y`) across multi-page audits.
-
-#### 📊 Colorful Multi-Dataset CSV Exports
-Standard CSV files are typically monochrome; this platform innovates by embedding **RFC-4180 compliant UTF-8 visual emoji indicators** into every export, ensuring instant color-coded recognition in Microsoft Excel, Apple Numbers, and Google Sheets:
-- **Filtered Transactions CSV (`GET /transactions/export`)**:
-  - Status column includes badges: `🟢 FULLY_SETTLED`, `🟡 PARTIALLY_SETTLED`, `🔴 OVER_SETTLED`, `🟣 REFUNDED`, `⚪ PENDING`.
-  - Issue severity column includes flags: `🔴 CRITICAL`, `🟡 WARNING`, `🟢 CLEAR`.
-  - Added dedicated `issues_summary` column for granular spreadsheet filtering.
-- **Ingested Settlements CSV (`exportSettlementsCSV`)**:
-  - Settlement type formatted as `🟢 DEBIT` or `🟣 CREDIT`.
-  - Match status formatted as `🟢 MATCHED (TXN_ID)` or `⚪ UNMATCHED`.
-- **Transaction Settlement Dossier CSV (`GET /transactions/:id/export-settlements`)**:
-  - Match method identified as `🔹 PRIMARY_LIFECYCLE` or `🔸 FALLBACK_COMPOSITE`.
-- **Operational Exceptions CSV (`GET /exceptions/export`)**:
-  - Review status formatted as `🟢 RESOLVED`, `🟡 IN_REVIEW`, `⚪ UNREVIEWED`, or `🟣 DISMISSED`.
-- **Quarantined Batch Items CSV**: Instant download of invalid, conflicting, or ambiguous tranches directly from the reconciliation modal.
-
----
-
-### 2. Advanced Filtering and Search Capabilities on the Dashboard
-
-The dashboard provides a high-density, real-time financial control room equipped with multi-dimensional filtering and search:
-
-| Capability | Filter Mechanism | Operational Impact |
-| :--- | :--- | :--- |
-| **Instant Real-Time Search** | Debounced omni-search input | Sub-millisecond filtering matching Transaction ID, Lifecycle ID, Merchant Name, or Account ID. |
-| **Settlement Status Pills** | 6-state segmented filter buttons | Single-click isolation of `All`, `Fully Settled` (🟢), `Partially Settled` (🟡), `Pending` (⚪), `Over-Settled` (🔴), or `Refunded` (🟣). |
-| **Issue Severity Triage** | Priority selector dropdown | Rapid filtering between `All`, `Critical Discrepancies` (🔴), `Warnings` (🟡), or `Clean Records` (🟢). |
-| **Historical Time-Travel** | Top-bar date picker simulation | Dynamically recalculates aging delays, settlement balances, and SLA breaches as of any historical calendar date. |
-| **SLA Aging Bands** | Real-time aging classification | Categorizes ledger exposure into 0–3 Days (Active), 4–7 Days (Maturing), and >7 Days (Critical SLA Breach). |
-| **Contextual Run Filtering** | Ingestion run selector | Filter the entire ledger to view only records impacted by a specific reconciliation run. |
+### 9. Advanced Multi-Dimensional Filtering & Search Control
+The dashboard provides a real-time financial control room equipped with multi-dimensional filtering and search:
+- **Instant Omni-Search**: Debounced search matching Transaction ID, Lifecycle ID, Merchant Name, or Account ID.
+- **Settlement Status Pills**: Single-click segmented filters for `All`, `Fully Settled` (🟢), `Partially Settled` (🟡), `Pending` (⚪), `Over-Settled` (🔴), and `Refunded` (🟣).
+- **Issue Severity Triage**: Priority dropdown for `All`, `Critical Discrepancies` (🔴), `Warnings` (🟡), and `Clean Records` (🟢).
+- **Historical Time-Travel**: Interactive calendar date selector dynamically re-evaluating ledger balances and SLA aging as of any historical date.
+- **SLA Aging Bands**: Real-time classification into 0–3 Days (Active), 4–7 Days (Maturing), and >7 Days (Overdue SLA Breach).
 
 ---
 
@@ -440,7 +245,7 @@ Planned enhancements for direct integration into client e-commerce platforms:
 
 ---
 
-## 📡 REST API Documentation
+## REST API Documentation
 
 ### 🔑 Authentication Endpoints
 | Method | Route | Description | Auth Required |
@@ -488,7 +293,7 @@ Planned enhancements for direct integration into client e-commerce platforms:
 
 ---
 
-## 🗄️ Database Schema & Entity Relationship
+## Database Schema & Entity Relationship
 
 The database runs on **SQLite** with strict foreign key constraints enabled (`PRAGMA foreign_keys = ON;`).
 
@@ -579,7 +384,7 @@ CREATE TABLE users (
 
 ---
 
-## 🧪 Automated Testing Suite
+## Automated Testing Suite
 
 The project includes unit and integration tests written in **Vitest** and **Supertest** covering all reconciliation algorithms, API endpoints, and edge cases.
 
@@ -602,7 +407,7 @@ npm test
 
 ---
 
-## 🚀 Local Development & Quick Start
+## Local Development & Quick Start
 
 ### Prerequisites
 - **Node.js**: v20+
@@ -649,7 +454,7 @@ npm run dev
 
 ---
 
-## 🌐 Deployment & Environment Configuration
+## Deployment & Environment Configuration
 
 ### Backend Environment Variables (`backend/.env`)
 
