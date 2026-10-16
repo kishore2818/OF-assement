@@ -141,10 +141,6 @@ function ProtectedLayout() {
           </Routes>
         </main>
 
-        {/* Footer */}
-        <footer className="hidden lg:block border-t border-[#D1D8E6]/60 bg-white py-6 text-center text-xs text-[#5B6487] font-mono mt-auto px-4">
-          <p>Open Fabric Reconcile • High-Precision Ledger Reconciliation Engine • SQLite Node</p>
-        </footer>
       </div>
 
       {/* Mobile Sticky Bottom Navigation Bar */}

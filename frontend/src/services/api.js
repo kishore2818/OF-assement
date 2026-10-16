@@ -1,5 +1,18 @@
-const rawApiBase = import.meta.env.VITE_API_URL || '';
-const API_BASE = rawApiBase ? rawApiBase.replace(/\/+$/, '') : '';
+// Environment Switcher: toggle between local server (true) or cloud render server (false)
+const useLocalFlag = import.meta.env.VITE_USE_LOCAL_API;
+const isLocal = useLocalFlag !== undefined 
+  ? String(useLocalFlag).toLowerCase() === 'true' 
+  : (import.meta.env.DEV || !import.meta.env.VITE_API_URL);
+
+const defaultLocalUrl = 'http://localhost:4000';
+const defaultCloudUrl = 'https://of-backend.onrender.com';
+
+const rawApiBase = import.meta.env.VITE_API_URL || (isLocal 
+  ? (import.meta.env.VITE_LOCAL_API_URL || defaultLocalUrl)
+  : (import.meta.env.VITE_CLOUD_API_URL || defaultCloudUrl));
+
+export const API_BASE = rawApiBase ? rawApiBase.replace(/\/+$/, '') : (isLocal ? defaultLocalUrl : defaultCloudUrl);
+export const IS_LOCAL_API = isLocal;
 
 export function getAuthToken() {
   return localStorage.getItem('of_auth_token');

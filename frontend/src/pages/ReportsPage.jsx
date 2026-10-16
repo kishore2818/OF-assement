@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   Download,
   FileSpreadsheet,
-  FileText,
   CheckCircle2,
   AlertCircle,
   RefreshCw,
@@ -160,13 +159,8 @@ export function ReportsPage({ evaluationDate, refreshKey }) {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#0B0F19] p-2 flex items-center justify-center border border-slate-700 shadow-sm">
-                <img src="/favicon.png" alt="OpenFabric Logo" className="w-full h-full object-contain" />
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-[#E6FAF5] text-[#1EC8A5] flex items-center justify-center border border-[#B3F0E1]">
-                <FileText className="w-6 h-6 stroke-[2.2]" />
-              </div>
+            <div className="w-12 h-12 rounded-2xl bg-[#0B0F19] p-2 flex items-center justify-center border border-slate-700 shadow-sm">
+              <img src="/favicon.png" alt="OpenFabric Logo" className="w-full h-full object-contain" />
             </div>
 
             <div>
